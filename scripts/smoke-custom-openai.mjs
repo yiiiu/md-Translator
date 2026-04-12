@@ -12,6 +12,16 @@ async function expectJson(url, init) {
   return { response, data };
 }
 
+function expectOkShape(name, payload) {
+  if (typeof payload.ok !== "boolean") {
+    throw new Error(`Expected ok boolean from ${name} endpoint`);
+  }
+
+  if (payload.ok === false && typeof payload.error !== "string") {
+    throw new Error(`Expected error string from ${name} endpoint when ok is false`);
+  }
+}
+
 async function main() {
   const engines = await expectJson(`${base}/api/engines`);
   const customEngine = (engines.data.engines || []).find(
@@ -39,9 +49,7 @@ async function main() {
     })
   });
 
-  if (typeof models.data.ok !== "boolean") {
-    throw new Error("Expected ok boolean from models endpoint");
-  }
+  expectOkShape("models", models.data);
 
   const testResult = await expectJson(`${base}/api/engines/custom-openai/test`, {
     method: "POST",
@@ -53,9 +61,7 @@ async function main() {
     })
   });
 
-  if (typeof testResult.data.ok !== "boolean") {
-    throw new Error("Expected ok boolean from test endpoint");
-  }
+  expectOkShape("test", testResult.data);
 
   console.log("custom-openai smoke shape checks passed");
 }
