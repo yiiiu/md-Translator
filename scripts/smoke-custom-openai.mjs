@@ -63,6 +63,28 @@ async function main() {
 
   expectOkShape("test", testResult.data);
 
+  const translation = await fetch(`${base}/api/translate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      engine: "custom-openai",
+      target_lang: "zh-CN",
+      mode: "full",
+      paragraphs: [
+        { id: "p-0", type: "paragraph", content: "Hello world", index: 0 }
+      ]
+    })
+  });
+
+  const translationText = await translation.text();
+  if (!translationText.includes("data:")) {
+    throw new Error("Expected SSE response for custom-openai translation");
+  }
+
+  if (translationText.includes("Unknown engine")) {
+    throw new Error("Expected custom-openai to be routed to an engine adapter");
+  }
+
   console.log("custom-openai smoke shape checks passed");
 }
 

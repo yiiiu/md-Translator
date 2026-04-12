@@ -136,7 +136,8 @@ export async function* translateStream(
 function createEngine(engineId: string) {
   switch (engineId) {
     case "openai":
-      return new OpenAIEngine();
+    case "custom-openai":
+      return new OpenAIEngine(engineId);
     default:
       throw new Error(`Unknown engine: ${engineId}`);
   }
