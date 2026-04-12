@@ -19,7 +19,7 @@ export default function SplitView() {
   }));
 
   return (
-    <div className="grid flex-1 min-h-0 gap-4 px-4 pb-4 lg:grid-cols-2">
+    <div className="grid h-full min-h-0 flex-1 gap-4 px-4 pb-4 lg:grid-cols-2">
       <PreviewPane
         paragraphs={originalParagraphs}
         title="Original"

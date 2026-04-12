@@ -23,7 +23,7 @@ export default function PreviewPane({
     <section
       ref={containerRef}
       onScroll={onScroll}
-      className="flex h-full flex-col overflow-y-auto rounded-2xl border border-stone-200 bg-white/90 shadow-[0_18px_50px_-32px_rgba(20,20,20,0.45)]"
+      className="flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-stone-200 bg-white/90 shadow-[0_18px_50px_-32px_rgba(20,20,20,0.45)]"
     >
       <div className="sticky top-0 z-10 border-b border-stone-200 bg-stone-50/95 px-4 py-3 backdrop-blur">
         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">

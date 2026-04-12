@@ -5,9 +5,9 @@ import Toolbar from "@/components/Toolbar";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col">
+    <main className="flex h-screen overflow-hidden flex-col">
       <Toolbar />
-      <div className="flex flex-1 flex-col py-4">
+      <div className="flex min-h-0 flex-1 overflow-hidden py-4">
         <SplitView />
       </div>
       <InputArea />
