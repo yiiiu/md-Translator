@@ -23,6 +23,23 @@ function expectOkShape(name, payload) {
 }
 
 async function main() {
+  const configPayload = {
+    name: "Relay Test",
+    api_key: "sk-test",
+    base_url: "https://example.com/v1",
+    model: "demo-model"
+  };
+
+  const configResponse = await expectJson(`${base}/api/engines/custom-openai/config`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(configPayload)
+  });
+
+  if (!configResponse.data.ok) {
+    throw new Error("Expected config save to succeed");
+  }
+
   const engines = await expectJson(`${base}/api/engines`);
   const customEngine = (engines.data.engines || []).find(
     (engine) => engine.id === "custom-openai"
