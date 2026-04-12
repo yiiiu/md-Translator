@@ -21,9 +21,10 @@ export async function POST(request: NextRequest) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
         }
         controller.close();
-      } catch (err: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error";
         controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: "error", error: err.message })}\n\n`)
+          encoder.encode(`data: ${JSON.stringify({ type: "error", error: message })}\n\n`)
         );
         controller.close();
       }

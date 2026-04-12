@@ -90,7 +90,7 @@ export class OpenAIEngine implements TranslationEngine {
 
     // Fallback: if parsing failed, map by position
     if (results.length === 0 && originalParagraphs.length > 0) {
-      return originalParagraphs.map((p, i) => ({
+      return originalParagraphs.map((p) => ({
         paragraphId: p.id,
         translated: content,
       })).slice(0, 1);
