@@ -12,8 +12,14 @@ const TARGET_LANGUAGES = [
   { value: "ko", label: "한국어" },
 ];
 
+const ENGINE_OPTIONS = [
+  { value: "openai", label: "OpenAI" },
+  { value: "custom-openai", label: "Custom OpenAI-Compatible" },
+];
+
 export default function Toolbar() {
-  const { engine, targetLang, mode, paragraphs, setTargetLang } = useTranslationStore();
+  const { engine, targetLang, mode, paragraphs, setEngine, setTargetLang } =
+    useTranslationStore();
   const [translating, setTranslating] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
 
@@ -63,6 +69,18 @@ export default function Toolbar() {
 
           <div className="flex flex-wrap items-center gap-2">
             <select
+              value={engine}
+              onChange={(event) => setEngine(event.target.value)}
+              className="rounded-xl border border-stone-300 bg-stone-50 px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-blue-500"
+            >
+              {ENGINE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            <select
               value={targetLang}
               onChange={(event) => setTargetLang(event.target.value)}
               className="rounded-xl border border-stone-300 bg-stone-50 px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-blue-500"
@@ -99,7 +117,9 @@ export default function Toolbar() {
         </div>
       </header>
 
-      {showConfig ? <EngineConfig onClose={() => setShowConfig(false)} /> : null}
+      {showConfig ? (
+        <EngineConfig engineId={engine} onClose={() => setShowConfig(false)} />
+      ) : null}
     </>
   );
 }
