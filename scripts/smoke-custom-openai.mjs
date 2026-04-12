@@ -14,14 +14,20 @@ async function expectJson(url, init) {
 
 async function main() {
   const engines = await expectJson(`${base}/api/engines`);
-  const ids = new Set((engines.data.engines || []).map((engine) => engine.id));
+  const customEngine = (engines.data.engines || []).find(
+    (engine) => engine.id === "custom-openai"
+  );
 
-  if (!ids.has("openai")) {
-    throw new Error("Expected openai engine");
+  if (!customEngine) {
+    throw new Error("Expected custom-openai engine");
   }
 
-  if (!ids.has("custom-openai")) {
-    throw new Error("Expected custom-openai engine");
+  if (!("configured" in customEngine)) {
+    throw new Error("Expected configured flag on custom-openai engine");
+  }
+
+  if (!("name" in customEngine)) {
+    throw new Error("Expected display name on custom-openai engine");
   }
 
   const models = await expectJson(`${base}/api/engines/custom-openai/models`, {
