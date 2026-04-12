@@ -6,6 +6,14 @@ const ENGINE_DEFAULT_NAMES: Record<string, string> = {
   "custom-openai": "Custom OpenAI-Compatible",
 };
 
+function normalizeString(value: unknown) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim();
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -17,20 +25,24 @@ export async function POST(
     return NextResponse.json({ error: "Unsupported engine" }, { status: 400 });
   }
 
-  if (!body.api_key) {
+  const apiKey = normalizeString(body.api_key);
+  const baseUrl = normalizeString(body.base_url);
+  const name = normalizeString(body.name);
+
+  if (!apiKey) {
     return NextResponse.json({ error: "api_key is required" }, { status: 400 });
   }
 
-  if (id === "custom-openai" && !body.base_url) {
+  if (id === "custom-openai" && !baseUrl) {
     return NextResponse.json({ error: "base_url is required" }, { status: 400 });
   }
 
   upsertEngineConfig({
     id,
-    name: body.name?.trim() || ENGINE_DEFAULT_NAMES[id],
-    api_key: body.api_key,
-    model: body.model || "",
-    base_url: body.base_url || "",
+    name: name || ENGINE_DEFAULT_NAMES[id],
+    api_key: apiKey,
+    model: typeof body.model === "string" ? body.model : "",
+    base_url: baseUrl,
     extra: "{}",
   });
 
