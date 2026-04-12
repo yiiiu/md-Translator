@@ -154,6 +154,23 @@ Go 后端
 
 V2 布局增加：工具栏多出 [翻译引擎▾] 和 [按需翻译] 按钮；右栏每个段落显示 ✏️编辑 / 🔄重翻 按钮。
 
+### 滚动同步实现
+
+左右两栏段落高度不一致（中文译文通常比英文原文长），纯滚动百分比同步会错位。设计如下：
+
+- 每个段落 DOM 元素带 `data-paragraph-id="p-N"` 属性
+- 监听滚动侧的 scroll 事件，找到当前 viewport 顶部最近的段落 ID（即"当前段落"）
+- 驱动另一侧滚动到同一段落 ID 的 DOM 元素顶部，实现按段落 ID 对齐
+- 用 `requestAnimationFrame` 节流，避免滚动卡顿
+- 双向绑定：滚动左侧驱动右侧对齐，滚动右侧驱动左侧对齐，通过 flag 防止循环触发
+- 短段落密集区域（如列表项）可合并为一个"段落组"一起对齐，避免高频跳动
+
+```
+左栏滚动 → 找到 viewport 顶部对应的段落 p-3
+         → 右栏 scrollIntoView 到 p-3 的 DOM 元素
+         → 设置 flag 防止右栏 scroll 事件反向触发
+```
+
 ### 段落状态标识
 
 - `idle`（未翻译）：无特殊标识
@@ -266,6 +283,7 @@ data: {"type": "complete"}
 - API Key 存后端，前端不接触密钥
 - 前端全权负责段落 ID 分配，后端只做 ID 到译文的透传映射
 - SSE 中包含 error 事件，前端据此更新段落状态
+- SSE 断线续传：后端每翻译完一段就更新 tasks.completed_ids，前端重连 SSE 时调用 GET /api/translate/:task_id 拿到已完成段落列表，跳过已翻译的段落继续推送
 
 ## 数据模型
 
@@ -295,11 +313,13 @@ CREATE TABLE translation_cache (
 );
 
 CREATE TABLE tasks (
-    id          TEXT PRIMARY KEY,
-    status      TEXT DEFAULT 'pending',
-    engine      TEXT NOT NULL,
-    target_lang TEXT NOT NULL,
-    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+    id              TEXT PRIMARY KEY,
+    status          TEXT DEFAULT 'pending',     -- pending/processing/completed/failed
+    engine          TEXT NOT NULL,
+    target_lang     TEXT NOT NULL,
+    completed_ids   TEXT DEFAULT '[]',          -- JSON array: 已翻译的段落 ID 列表
+    failed_ids      TEXT DEFAULT '{}',          -- JSON object: {"p-3": "timeout", ...} 失败段落及原因
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
