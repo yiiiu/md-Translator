@@ -32,10 +32,22 @@ export interface EngineListResponse {
   }>;
 }
 
+export interface EngineModelsResponse {
+  ok: boolean;
+  models?: Array<{ id: string; owned_by?: string }>;
+  error?: string;
+}
+
+export interface EngineTestResponse {
+  ok: boolean;
+  error?: string;
+}
+
 interface EngineConfigRequest {
   api_key: string;
   model?: string;
   base_url?: string;
+  name?: string;
 }
 
 export async function startTranslation(
@@ -149,4 +161,30 @@ export async function configureEngine(
   });
 
   return (await response.json()) as { ok?: boolean; error?: string };
+}
+
+export async function fetchEngineModels(
+  id: string,
+  config: { api_key: string; base_url: string }
+): Promise<EngineModelsResponse> {
+  const response = await fetch(`/api/engines/${id}/models`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(config),
+  });
+
+  return (await response.json()) as EngineModelsResponse;
+}
+
+export async function testEngineModel(
+  id: string,
+  config: { api_key: string; base_url: string; model: string }
+): Promise<EngineTestResponse> {
+  const response = await fetch(`/api/engines/${id}/test`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(config),
+  });
+
+  return (await response.json()) as EngineTestResponse;
 }
