@@ -239,7 +239,9 @@ data: {"paragraph_id": "p-2", "status": "error", "error": "API timeout after ret
 data: {"type": "complete"}
 ```
 
-**POST /api/translate/paragraph** — 单段重新翻译（V2）（`app/api/translate/paragraph/route.ts`）
+**POST /api/paragraph** — 单段重新翻译（V2）（`app/api/paragraph/route.ts`）
+
+注意：不使用 `/api/translate/paragraph`，因为 `paragraph` 会被 Next.js 动态路由 `[taskId]` 匹配，导致路由冲突。
 
 请求：
 ```json
@@ -361,10 +363,13 @@ md-translator/
 │       │   └── route.ts                  # POST /api/translate
 │       ├── translate/[taskId]/events/
 │       │   └── route.ts                  # GET SSE 流式推送
-│       ├── translate/paragraph/
-│       │   └── route.ts                  # POST 单段重翻（V2）
+│       ├── paragraph/
+│       │   └── route.ts                  # POST /api/paragraph 单段重翻（V2）
 │       └── engines/
-│           └── route.ts                  # GET 引擎列表 + POST 配置
+│           ├── route.ts                  # GET /api/engines 引擎列表
+│           └── [id]/
+│               └── config/
+│                   └── route.ts          # POST /api/engines/[id]/config 配置引擎
 ├── components/
 │   ├── Toolbar.tsx                       # 顶部工具栏
 │   ├── SplitView.tsx                     # 左右分栏 + 滚动同步
@@ -382,11 +387,25 @@ md-translator/
 │   ├── cache.ts                          # 缓存查询/写入
 │   └── engines/
 │       └── openai.ts                     # OpenAI adapter（V1）
-├── next.config.ts
+├── next.config.ts                        # 含 serverComponentsExternalPackages 配置
 ├── package.json
 ├── tsconfig.json
 └── docs/
     └── superpowers/
         └── specs/
             └── 2026-04-12-md-translator-design.md
+```
+
+### Next.js 配置注意
+
+better-sqlite3 是 native module，Next.js 默认会尝试打包 Route Handler，可能导致报错。需要在 `next.config.ts` 中排除：
+
+```typescript
+// next.config.ts
+const nextConfig = {
+  experimental: {
+    serverComponentsExternalPackages: ['better-sqlite3']
+  }
+}
+export default nextConfig
 ```
