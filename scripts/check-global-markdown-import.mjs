@@ -15,14 +15,18 @@ if (!inputArea.includes("isEditableTarget")) {
   throw new Error("Global paste must avoid hijacking normal form fields");
 }
 if (!inputArea.includes("readMarkdownFile")) {
-  throw new Error("Drag/drop and upload must share the same file reader path");
+  throw new Error("Drag/drop must use the shared file reader path");
 }
 if (!inputArea.includes("Drop .md anywhere")) {
   throw new Error("InputArea must show a compact drop/paste hint");
 }
-if (!inputArea.includes("Upload")) {
-  throw new Error("Upload button must remain available");
+if (!inputArea.includes("setRawInput")) {
+  throw new Error("Global imports must dispatch into rawInput");
+}
+
+const toolbar = readFileSync("components/Toolbar.tsx", "utf8");
+if (!toolbar.includes("Upload .md")) {
+  throw new Error("Upload button must remain available in Toolbar");
 }
 
 console.log("global markdown import contract passed");
-

@@ -7,6 +7,17 @@ if (!store.includes("rawInput: string")) {
 if (!store.includes("setRawInput")) {
   throw new Error("translation store must expose setRawInput");
 }
+if (!store.includes("reset: () => set(initialState)")) {
+  throw new Error("reset must clear rawInput through initialState");
+}
+
+const toolbar = readFileSync("components/Toolbar.tsx", "utf8");
+if (!toolbar.includes("Upload .md") || !toolbar.includes("Clear")) {
+  throw new Error("Toolbar must own Upload .md and Clear actions");
+}
+if (!toolbar.includes("setRawInput(markdown)") || !toolbar.includes("reset()")) {
+  throw new Error("Toolbar upload/clear must write rawInput and reset state");
+}
 
 const splitView = readFileSync("components/SplitView.tsx", "utf8");
 if (!splitView.includes("<textarea")) {
@@ -15,8 +26,14 @@ if (!splitView.includes("<textarea")) {
 if (!splitView.includes('placeholder="Paste Markdown here, or drag & drop a .md file..."')) {
   throw new Error("SplitView textarea must use the requested placeholder");
 }
+if (!splitView.includes("line-number-gutter") || !splitView.includes("leading-5")) {
+  throw new Error("SplitView must render a synchronized leading-5 line-number gutter");
+}
 if (!splitView.includes("syncMarkdown")) {
   throw new Error("SplitView must parse raw input through syncMarkdown");
+}
+if (!splitView.includes("startTranslation") || !splitView.includes("1500")) {
+  throw new Error("SplitView must debounce automatic translation");
 }
 if (!splitView.includes("ref={leftRef}") || !splitView.includes("onScroll={handleLeftScroll}")) {
   throw new Error("SplitView left pane must keep the scroll-sync ref and onScroll");
@@ -32,11 +49,17 @@ if (!previewPane.includes("viewMode")) {
 if (!previewPane.includes("Preview") || !previewPane.includes("Code")) {
   throw new Error("PreviewPane must render the Preview/Code toggle");
 }
-if (!previewPane.includes("mode === \"code\"")) {
+if (!previewPane.includes("<svg")) {
+  throw new Error("PreviewPane toggle must use inline SVG icons");
+}
+if (!previewPane.includes('mode === "code"')) {
   throw new Error("PreviewPane must render raw code mode");
 }
-if (!previewPane.includes("<pre")) {
-  throw new Error("PreviewPane code mode must render a pre");
+if (!previewPane.includes("<textarea")) {
+  throw new Error("PreviewPane code mode must render an editable textarea");
+}
+if (!previewPane.includes("updateParagraph") || !previewPane.includes('status: "edited"')) {
+  throw new Error("PreviewPane code edits must write edited paragraph translations");
 }
 
 const inputArea = readFileSync("components/InputArea.tsx", "utf8");
@@ -46,9 +69,11 @@ if (inputArea.includes("<textarea")) {
 if (inputArea.includes("Parse")) {
   throw new Error("InputArea must no longer render a Parse button");
 }
-if (!inputArea.includes("Upload") || !inputArea.includes("Clear")) {
-  throw new Error("InputArea must preserve Upload and Clear");
+if (inputArea.includes("Upload") || inputArea.includes("Clear")) {
+  throw new Error("InputArea must not render Upload or Clear actions");
+}
+if (!inputArea.includes("Drop .md anywhere")) {
+  throw new Error("InputArea must keep the compact import hint");
 }
 
 console.log("split editor layout contract passed");
-

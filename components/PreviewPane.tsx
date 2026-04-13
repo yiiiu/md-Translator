@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { RefObject, UIEventHandler } from "react";
-import { type Paragraph } from "@/stores/translation";
+import { useEffect, useRef, useState } from "react";
+import type { RefObject, UIEvent, UIEventHandler } from "react";
+import { type Paragraph, useTranslationStore } from "@/stores/translation";
 import ParagraphBlock from "./ParagraphBlock";
 
 interface Props {
@@ -18,6 +18,39 @@ function formatLineNumber(index: number) {
   return String(index + 1).padStart(2, "0");
 }
 
+function EyeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-3 w-3"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" />
+      <circle cx="12" cy="12" r="2.75" />
+    </svg>
+  );
+}
+
+function CodeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-3 w-3"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+    >
+      <path d="m8.5 8-4 4 4 4M15.5 8l4 4-4 4" />
+    </svg>
+  );
+}
+
 export default function PreviewPane({
   paragraphs,
   title,
@@ -27,14 +60,40 @@ export default function PreviewPane({
   viewMode = "preview",
 }: Props) {
   const isTranslation = title.toLowerCase() === "translation";
+  const updateParagraph = useTranslationStore((state) => state.updateParagraph);
+  const codeLineNumberRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState(viewMode);
   const outputMarkdown = paragraphs
     .map((paragraph) => paragraph.translated || paragraph.original)
     .join("\n\n");
+  const [codeDraft, setCodeDraft] = useState(outputMarkdown);
+  const codeLineCount = Math.max(1, codeDraft.split("\n").length);
 
   useEffect(() => {
     setMode(viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    setCodeDraft(outputMarkdown);
+  }, [outputMarkdown]);
+
+  const handleCodeScroll = (event: UIEvent<HTMLTextAreaElement>) => {
+    if (codeLineNumberRef.current) {
+      codeLineNumberRef.current.scrollTop = event.currentTarget.scrollTop;
+    }
+  };
+
+  const handleCodeChange = (value: string) => {
+    setCodeDraft(value);
+
+    const parts = value.split(/\n\s*\n/);
+    paragraphs.forEach((paragraph, index) => {
+      updateParagraph(paragraph.id, {
+        translated: parts[index] ?? "",
+        status: "edited",
+      });
+    });
+  };
 
   const handleCopy = async () => {
     if (!outputMarkdown) return;
@@ -70,23 +129,25 @@ export default function PreviewPane({
                 <button
                   type="button"
                   onClick={() => setMode("preview")}
-                  className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] transition ${
+                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] transition ${
                     mode === "preview"
                       ? "bg-[#d5e3fc] text-[#003ec7]"
                       : "text-[#737688] hover:text-[#003ec7]"
                   }`}
                 >
+                  <EyeIcon />
                   Preview
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode("code")}
-                  className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] transition ${
+                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] transition ${
                     mode === "code"
                       ? "bg-[#d5e3fc] text-[#003ec7]"
                       : "text-[#737688] hover:text-[#003ec7]"
                   }`}
                 >
+                  <CodeIcon />
                   Code
                 </button>
               </div>
@@ -120,30 +181,38 @@ export default function PreviewPane({
       <div
         ref={containerRef}
         onScroll={mode === "preview" ? onScroll : undefined}
-        className={`surface-pane custom-scrollbar flex min-h-0 flex-1 overflow-y-auto rounded-xl ${
-          isTranslation ? "ring-1 ring-[#003ec7]/10" : "ring-1 ring-[#c3c5d9]/15"
-        }`}
+        className={`surface-pane custom-scrollbar flex min-h-0 flex-1 rounded-xl ${
+          mode === "code" ? "overflow-hidden" : "overflow-y-auto"
+        } ${isTranslation ? "ring-1 ring-[#003ec7]/10" : "ring-1 ring-[#c3c5d9]/15"}`}
       >
         {mode === "code" ? (
-          <pre className="custom-scrollbar min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap break-words px-4 py-3 font-mono text-xs leading-6 text-[#111c2d]">
-            {outputMarkdown || <span className="text-[#b0b3c8]">{emptyState}</span>}
-          </pre>
+          <div className="grid min-h-0 flex-1 grid-cols-[3.25rem_minmax(0,1fr)]">
+            <div
+              ref={codeLineNumberRef}
+              aria-hidden="true"
+              className="line-number-gutter overflow-hidden py-3 text-center text-[10px] leading-5"
+            >
+              {Array.from({ length: codeLineCount }, (_, index) => (
+                <div key={index}>{formatLineNumber(index)}</div>
+              ))}
+            </div>
+            <textarea
+              value={codeDraft}
+              onChange={(event) => handleCodeChange(event.target.value)}
+              onScroll={handleCodeScroll}
+              placeholder={emptyState}
+              className="custom-scrollbar min-h-0 flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3 font-mono text-xs leading-5 text-[#111c2d] outline-none placeholder:text-[#b0b3c8]"
+            />
+          </div>
         ) : paragraphs.length === 0 ? (
           <div className="grid min-h-full flex-1 place-items-center px-8 py-16 text-center text-sm text-[#737688]">
             {emptyState}
           </div>
         ) : (
-          <div className="grid min-w-0 flex-1 grid-cols-[3.25rem_minmax(0,1fr)]">
-            <div className="line-number-gutter select-none py-4 text-center text-[10px] leading-8">
-              {paragraphs.map((paragraph, index) => (
-                <div key={paragraph.id}>{formatLineNumber(index)}</div>
-              ))}
-            </div>
-            <div className="min-w-0 py-3">
-              {paragraphs.map((paragraph) => (
-                <ParagraphBlock key={paragraph.id} paragraph={paragraph} />
-              ))}
-            </div>
+          <div className="min-w-0 flex-1 py-3">
+            {paragraphs.map((paragraph) => (
+              <ParagraphBlock key={paragraph.id} paragraph={paragraph} />
+            ))}
           </div>
         )}
       </div>

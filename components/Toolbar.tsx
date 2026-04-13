@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { fetchEngines, startTranslation } from "@/services/api";
 import { useTranslationStore } from "@/stores/translation";
 import EngineConfig from "./EngineConfig";
@@ -17,9 +17,22 @@ const DEFAULT_ENGINE_OPTIONS = [
   { value: "custom-openai", label: "Custom OpenAI-Compatible" },
 ];
 
+function isMarkdownFile(file: File) {
+  const name = file.name.toLowerCase();
+  return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".txt");
+}
+
 export default function Toolbar() {
-  const { engine, targetLang, mode, paragraphs, setEngine, setTargetLang } =
-    useTranslationStore();
+  const {
+    engine,
+    targetLang,
+    mode,
+    paragraphs,
+    setEngine,
+    setTargetLang,
+    setRawInput,
+    reset,
+  } = useTranslationStore();
   const [translating, setTranslating] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
   const [engineOptions, setEngineOptions] = useState(DEFAULT_ENGINE_OPTIONS);
@@ -45,6 +58,27 @@ export default function Toolbar() {
   useEffect(() => {
     void refreshEngineOptions();
   }, []);
+
+  const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !isMarkdownFile(file)) {
+      event.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      const markdown =
+        typeof loadEvent.target?.result === "string" ? loadEvent.target.result : "";
+      setRawInput(markdown);
+    };
+    reader.readAsText(file);
+    event.target.value = "";
+  };
+
+  const handleClear = () => {
+    reset();
+  };
 
   const handleTranslate = async () => {
     if (!canTranslate) return;
@@ -101,10 +135,10 @@ export default function Toolbar() {
             <button
               type="button"
               onClick={() => setShowConfig(true)}
-              className="grid h-9 w-9 place-items-center rounded-full text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
+              className="rounded-full px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
               aria-label="Settings"
             >
-              ⚙
+              Settings
             </button>
             <div className="grid h-8 w-8 place-items-center rounded-full bg-[#111c2d] text-xs font-bold text-white">
               L
@@ -115,7 +149,9 @@ export default function Toolbar() {
         <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f0f3ff] px-4 py-3 lg:px-8">
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#111c2d] shadow-sm ring-1 ring-[#c3c5d9]/15">
-              <span className="text-[#003ec7]">◈</span>
+              <span className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#003ec7]">
+                Engine
+              </span>
               <select
                 value={engine}
                 onChange={(event) => setEngine(event.target.value)}
@@ -132,7 +168,7 @@ export default function Toolbar() {
 
             <div className="flex items-center gap-2 rounded-xl bg-white p-1 text-xs font-extrabold uppercase tracking-[0.18em] text-[#003ec7] shadow-sm ring-1 ring-[#c3c5d9]/15">
               <span className="rounded-lg bg-[#d5e3fc] px-3 py-1.5">Auto</span>
-              <span className="text-[#737688]">→</span>
+              <span className="text-[#737688]">to</span>
               <select
                 value={targetLang}
                 onChange={(event) => setTargetLang(event.target.value)}
@@ -150,6 +186,24 @@ export default function Toolbar() {
             <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#57657a]">
               {paragraphs.length} paragraphs
             </span>
+
+            <label className="cursor-pointer rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#515f74] transition hover:bg-[#dee8ff] hover:text-[#003ec7]">
+              Upload .md
+              <input
+                type="file"
+                accept=".md,.markdown,.txt"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={handleClear}
+              className="rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#515f74] transition hover:bg-[#dee8ff] hover:text-[#003ec7]"
+            >
+              Clear
+            </button>
           </div>
 
           <button
@@ -175,4 +229,3 @@ export default function Toolbar() {
     </>
   );
 }
-

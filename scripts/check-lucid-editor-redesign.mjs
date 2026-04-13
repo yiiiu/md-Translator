@@ -15,7 +15,7 @@ if (!toolbar.includes("from-[#003ec7]") || !toolbar.includes("to-[#0052ff]")) {
 
 const previewPane = readFileSync("components/PreviewPane.tsx", "utf8");
 if (!previewPane.includes("line-number-gutter")) {
-  throw new Error("Preview panes must include the Stitch line-number gutter");
+  throw new Error("Code preview must include the Stitch line-number gutter");
 }
 if (!previewPane.includes("surface-pane")) {
   throw new Error("Preview panes must use the raised surface-pane treatment");
@@ -28,8 +28,16 @@ if (!inputArea.includes("bottom-action-shell")) {
 if (inputArea.includes("Parse")) {
   throw new Error("Bottom action shell must not include the old Parse action");
 }
-if (!inputArea.includes("Upload") || !inputArea.includes("Clear")) {
-  throw new Error("Bottom action shell must preserve Upload and Clear actions");
+if (inputArea.includes("Upload") || inputArea.includes("Clear")) {
+  throw new Error("Bottom action shell must not render Upload or Clear actions");
+}
+if (!inputArea.includes("Drop .md anywhere")) {
+  throw new Error("Bottom action shell must keep the compact import hint");
+}
+
+const toolbarUploadClear = toolbar.includes("Upload .md") && toolbar.includes("Clear");
+if (!toolbarUploadClear) {
+  throw new Error("Toolbar must preserve Upload .md and Clear actions");
 }
 
 const statusBar = readFileSync("components/StatusBar.tsx", "utf8");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslationStore } from "@/stores/translation";
 
 function isMarkdownFile(file: File) {
@@ -26,8 +26,7 @@ function readMarkdownFile(file: File, onRead: (markdown: string) => void) {
 }
 
 export default function InputArea() {
-  const { paragraphs, reset, setRawInput } = useTranslationStore();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { paragraphs, setRawInput } = useTranslationStore();
   const dragDepthRef = useRef(0);
   const [draggingMarkdown, setDraggingMarkdown] = useState(false);
 
@@ -87,18 +86,6 @@ export default function InputArea() {
     };
   }, [setRawInput]);
 
-  const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    readMarkdownFile(file, setRawInput);
-    event.target.value = "";
-  };
-
-  const handleClear = () => {
-    reset();
-  };
-
   return (
     <>
       {draggingMarkdown ? (
@@ -114,41 +101,22 @@ export default function InputArea() {
         </div>
       ) : null}
 
-      <footer className="bottom-action-shell grid gap-3 px-4 py-3 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center lg:px-8">
-        <div className="flex justify-start gap-2">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="flex min-w-20 flex-col items-center rounded-xl bg-[#d5e3fc] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#003ec7] transition hover:bg-white"
-          >
-            <span className="text-sm">Upload</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="flex min-w-20 flex-col items-center rounded-xl px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#515f74] transition hover:bg-white"
-          >
-            <span className="text-sm">Clear</span>
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".md,.markdown,.txt"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-        </div>
-
-        <div className="hidden text-center text-[10px] font-bold text-[#737688] lg:block">
-          Drop .md anywhere / Ctrl+V paste
+      <footer className="bottom-action-shell flex items-center justify-between gap-3 px-4 py-3 lg:px-8">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#111c2d] text-xs font-bold text-white">
+            L
+          </div>
+          <div className="truncate text-[10px] font-bold text-[#737688]">
+            Drop .md anywhere · Ctrl+V paste
+          </div>
         </div>
 
         <div className="flex items-center justify-end gap-2">
           <span className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#434656] ring-1 ring-[#c3c5d9]/20">
-            {paragraphs.length} buffers
+            {paragraphs.length} BUFFERS
           </span>
           <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#003ec7]">
-            Active
+            ACTIVE
           </span>
         </div>
       </footer>
