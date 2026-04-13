@@ -66,6 +66,8 @@ interface EngineConfigRequest {
   name?: string;
 }
 
+const RETRY_FAILED_CONCURRENCY = 4;
+
 export async function startTranslation(
   paragraphs: Paragraph[],
   engine: string,
@@ -205,6 +207,37 @@ export async function retryParagraph(
     });
     throw error;
   }
+}
+
+export async function retryFailedParagraphs(
+  paragraphs: Paragraph[],
+  engine: string,
+  targetLang: string
+): Promise<void> {
+  const failedParagraphs = paragraphs.filter(
+    (paragraph) => paragraph.status === "error"
+  );
+  if (failedParagraphs.length === 0) return;
+
+  let cursor = 0;
+  const workerCount = Math.min(RETRY_FAILED_CONCURRENCY, failedParagraphs.length);
+
+  async function retryNext(): Promise<void> {
+    while (cursor < failedParagraphs.length) {
+      const paragraph = failedParagraphs[cursor];
+      cursor += 1;
+
+      try {
+        await retryParagraph(paragraph, engine, targetLang);
+      } catch {
+        // retryParagraph already writes the per-paragraph error state.
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: workerCount }, () => retryNext())
+  );
 }
 
 export async function fetchEngines(): Promise<EngineListResponse> {
