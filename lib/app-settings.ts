@@ -1,7 +1,9 @@
 export type UiLanguage = "en" | "zh-CN";
+export type ThemeMode = "system" | "light" | "dark";
 
 export interface AppSettings {
   ui_language: UiLanguage;
+  theme_mode: ThemeMode;
   default_target_lang: string;
   auto_translate_enabled: boolean;
   auto_translate_debounce_ms: number;
@@ -9,6 +11,7 @@ export interface AppSettings {
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   ui_language: "en",
+  theme_mode: "system",
   default_target_lang: "zh-CN",
   auto_translate_enabled: true,
   auto_translate_debounce_ms: 1500,
@@ -23,6 +26,10 @@ export const TARGET_LANGUAGE_OPTIONS = [
 
 export function normalizeUiLanguage(value: unknown): UiLanguage {
   return value === "zh-CN" ? "zh-CN" : "en";
+}
+
+export function normalizeThemeMode(value: unknown): ThemeMode {
+  return value === "light" || value === "dark" ? value : "system";
 }
 
 export function normalizeTargetLanguage(value: unknown): string {
@@ -60,6 +67,7 @@ export function normalizeAppSettings(
 ): AppSettings {
   return {
     ui_language: normalizeUiLanguage(value?.ui_language),
+    theme_mode: normalizeThemeMode(value?.theme_mode),
     default_target_lang: normalizeTargetLanguage(value?.default_target_lang),
     auto_translate_enabled: normalizeAutoTranslateEnabled(
       value?.auto_translate_enabled

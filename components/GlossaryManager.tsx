@@ -282,14 +282,14 @@ export default function GlossaryManager({
         >
           {showHeader ? (
             <div className="space-y-3">
-              <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
+              <span className="rounded-full bg-[var(--secondary-container)] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[var(--on-surface-variant)]">
                 {terms.length} {glossaryText.tag}
               </span>
               <div>
-                <h2 className="font-headline text-4xl font-extrabold tracking-tight text-[#111c2d]">
+                <h2 className="font-headline text-4xl font-extrabold tracking-tight text-[var(--on-surface)]">
                   {embedded ? glossaryText.embeddedTitle : glossaryText.title}
                 </h2>
-                <p className="mt-2 max-w-2xl text-sm text-[#434656] lg:text-base">
+                <p className="mt-2 max-w-2xl text-sm text-[var(--on-surface-variant)] lg:text-base">
                   {embedded
                     ? glossaryText.embeddedDescription
                     : glossaryText.description}
@@ -297,7 +297,7 @@ export default function GlossaryManager({
               </div>
             </div>
           ) : (
-            <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
+            <span className="rounded-full bg-[var(--secondary-container)] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[var(--on-surface-variant)]">
               {terms.length} {glossaryText.tag}
             </span>
           )}
@@ -312,7 +312,7 @@ export default function GlossaryManager({
           </button>
         </div>
 
-        <div className="rounded-[1.25rem] bg-white p-4 shadow-[0_24px_48px_rgba(17,28,45,0.06)]">
+        <div className="rounded-[1.25rem] bg-[var(--surface-container-lowest)] p-4 shadow-[0_24px_48px_rgba(17,28,45,0.06)] ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_18%,transparent)]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               {[
@@ -328,8 +328,8 @@ export default function GlossaryManager({
                     onClick={() => setEnabledFilter(filter.value)}
                     className={
                       active
-                        ? "rounded-xl bg-[#ffffff] px-4 py-2 text-sm font-bold text-[#003ec7] shadow-sm"
-                        : "rounded-xl px-4 py-2 text-sm font-semibold text-[#57657a] transition hover:text-[#111c2d]"
+                        ? "rounded-xl bg-[var(--surface-container-lowest)] px-4 py-2 text-sm font-bold text-[var(--primary)] shadow-sm ring-1 ring-[color:color-mix(in_srgb,var(--primary)_18%,transparent)]"
+                        : "rounded-xl px-4 py-2 text-sm font-semibold text-[var(--on-surface-variant)] transition hover:text-[var(--on-surface)]"
                     }
                   >
                     {filter.label}
@@ -340,7 +340,7 @@ export default function GlossaryManager({
 
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_180px]">
               <label className="relative block min-w-[280px]">
-                <SearchIcon className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-[#737688]" />
+                <SearchIcon className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-[var(--on-surface-variant)]" />
                 <input
                   type="text"
                   value={query}
@@ -348,7 +348,7 @@ export default function GlossaryManager({
                     startTransition(() => setQuery(event.target.value))
                   }
                   placeholder={glossaryText.search}
-                  className="w-full rounded-xl bg-[#f9f9ff] py-3 pr-4 pl-11 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/20"
+                  className="w-full rounded-xl bg-[var(--surface)] py-3 pr-4 pl-11 text-sm text-[var(--on-surface)] outline-none ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] transition placeholder:text-[color:color-mix(in_srgb,var(--on-surface-variant)_75%,transparent)] focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--primary)_20%,transparent)]"
                 />
               </label>
 
@@ -360,9 +360,9 @@ export default function GlossaryManager({
                 options={sourceLanguageOptions}
                 ariaLabel={glossaryText.allSourceLangs}
                 leading={
-                  <FilterIcon className="h-4 w-4 shrink-0 text-[#737688]" strokeWidth={1.8} />
+                  <FilterIcon className="h-4 w-4 shrink-0 text-[var(--on-surface-variant)]" strokeWidth={1.8} />
                 }
-                triggerClassName="w-full justify-between bg-[#f9f9ff] px-3 py-3 text-sm shadow-none ring-[#c3c5d9]/25 hover:bg-[#f5f7ff]"
+                triggerClassName="w-full justify-between bg-[var(--surface)] px-3 py-3 text-sm shadow-none ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] hover:bg-[var(--surface-container-low)]"
               />
 
               <AppSelect
@@ -373,9 +373,9 @@ export default function GlossaryManager({
                 options={targetLanguageOptions}
                 ariaLabel={glossaryText.allTargetLangs}
                 leading={
-                  <FilterIcon className="h-4 w-4 shrink-0 text-[#737688]" strokeWidth={1.8} />
+                  <FilterIcon className="h-4 w-4 shrink-0 text-[var(--on-surface-variant)]" strokeWidth={1.8} />
                 }
-                triggerClassName="w-full justify-between bg-[#f9f9ff] px-3 py-3 text-sm shadow-none ring-[#c3c5d9]/25 hover:bg-[#f5f7ff]"
+                triggerClassName="w-full justify-between bg-[var(--surface)] px-3 py-3 text-sm shadow-none ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] hover:bg-[var(--surface-container-low)]"
               />
             </div>
           </div>
@@ -389,7 +389,7 @@ export default function GlossaryManager({
           <div className="custom-scrollbar mt-4 max-h-[min(34rem,calc(100vh-24rem))] overflow-auto rounded-2xl">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="sticky top-0 z-10 bg-[#f0f3ff]/95 text-[#434656] backdrop-blur-sm">
+                <tr className="sticky top-0 z-10 bg-[color:color-mix(in_srgb,var(--surface-container-low)_95%,transparent)] text-[var(--on-surface-variant)] backdrop-blur-sm">
                   <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
                     {glossaryText.originalTerm}
                   </th>
@@ -410,25 +410,25 @@ export default function GlossaryManager({
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#c3c5d9]/15">
+              <tbody className="divide-y divide-[color:color-mix(in_srgb,var(--outline-variant)_18%,transparent)]">
                 {terms.map((term) => (
-                  <tr key={term.id} className="transition hover:bg-[#f0f3ff]/35">
+                  <tr key={term.id} className="transition hover:bg-[color:color-mix(in_srgb,var(--surface-container-low)_35%,transparent)]">
                     <td className="px-6 py-5">
-                      <span className="font-semibold text-[#111c2d]">{term.source_term}</span>
+                      <span className="font-semibold text-[var(--on-surface)]">{term.source_term}</span>
                     </td>
-                    <td className="px-6 py-5 text-[#434656]">{term.target_term}</td>
+                    <td className="px-6 py-5 text-[var(--on-surface-variant)]">{term.target_term}</td>
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-2">
-                        <span className="rounded-lg bg-[#d5e3fc] px-2 py-1 text-[10px] font-black tracking-[0.18em] text-[#003ec7] uppercase">
+                        <span className="rounded-lg bg-[var(--secondary-container)] px-2 py-1 text-[10px] font-black tracking-[0.18em] text-[var(--primary)] uppercase">
                           {term.source_lang}
                         </span>
-                        <span className="text-[#737688]">to</span>
-                        <span className="rounded-lg bg-[#dee8ff] px-2 py-1 text-[10px] font-black tracking-[0.18em] text-[#003ec7] uppercase">
+                        <span className="text-[var(--on-surface-variant)]">to</span>
+                        <span className="rounded-lg bg-[var(--surface-container-high)] px-2 py-1 text-[10px] font-black tracking-[0.18em] text-[var(--primary)] uppercase">
                           {term.target_lang}
                         </span>
                       </div>
                     </td>
-                    <td className="max-w-[280px] px-6 py-5 text-sm text-[#57657a]">
+                    <td className="max-w-[280px] px-6 py-5 text-sm text-[var(--on-surface-variant)]">
                       {term.note || glossaryText.noNote}
                     </td>
                     <td className="px-6 py-5">
@@ -437,8 +437,8 @@ export default function GlossaryManager({
                         onClick={() => void handleToggleEnabled(term)}
                         className={
                           term.enabled
-                            ? "rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#003ec7] uppercase"
-                            : "rounded-full bg-[#f0f3ff] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#737688] uppercase"
+                            ? "rounded-full bg-[var(--secondary-container)] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[var(--primary)] uppercase"
+                            : "rounded-full bg-[var(--surface-container-low)] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[var(--on-surface-variant)] uppercase"
                         }
                       >
                         {term.enabled ? glossaryText.enabled : glossaryText.disabled}
@@ -449,7 +449,7 @@ export default function GlossaryManager({
                         <button
                           type="button"
                           onClick={() => openEditDialog(term)}
-                          className="rounded-lg p-2 text-[#434656] transition hover:bg-[#dee8ff] hover:text-[#003ec7]"
+                          className="rounded-lg p-2 text-[var(--on-surface-variant)] transition hover:bg-[var(--surface-container-high)] hover:text-[var(--primary)]"
                           title={glossaryText.editAction}
                         >
                           <EditIcon className="h-4 w-4" strokeWidth={1.8} />
@@ -457,7 +457,7 @@ export default function GlossaryManager({
                         <button
                           type="button"
                           onClick={() => void handleToggleEnabled(term)}
-                          className="rounded-lg p-2 text-[#434656] transition hover:bg-[#dee8ff] hover:text-[#003ec7]"
+                          className="rounded-lg p-2 text-[var(--on-surface-variant)] transition hover:bg-[var(--surface-container-high)] hover:text-[var(--primary)]"
                           title={
                             term.enabled
                               ? glossaryText.disableAction
@@ -469,7 +469,7 @@ export default function GlossaryManager({
                         <button
                           type="button"
                           onClick={() => void handleDelete(term)}
-                          className="rounded-lg p-2 text-[#434656] transition hover:bg-[#ffdad6] hover:text-[#93000a]"
+                          className="rounded-lg p-2 text-[var(--on-surface-variant)] transition hover:bg-[var(--error-container)] hover:text-[var(--error)]"
                           title={glossaryText.deleteAction}
                         >
                           <DeleteIcon className="h-4 w-4" strokeWidth={1.8} />
@@ -483,15 +483,15 @@ export default function GlossaryManager({
           </div>
 
           {loading ? (
-            <p className="mt-4 text-sm text-[#737688]">{glossaryText.loading}</p>
+            <p className="mt-4 text-sm text-[var(--on-surface-variant)]">{glossaryText.loading}</p>
           ) : null}
 
           {!loading && terms.length === 0 ? (
-            <div className="mt-6 rounded-2xl bg-[#f0f3ff] px-6 py-10 text-center">
-              <p className="font-headline text-xl font-extrabold text-[#111c2d]">
+            <div className="mt-6 rounded-2xl bg-[var(--surface-container-low)] px-6 py-10 text-center">
+              <p className="font-headline text-xl font-extrabold text-[var(--on-surface)]">
                 {glossaryText.emptyTitle}
               </p>
-              <p className="mt-2 text-sm text-[#57657a]">
+              <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
                 {glossaryText.emptyDescription}
               </p>
             </div>
@@ -500,25 +500,25 @@ export default function GlossaryManager({
       </div>
 
       {showDialog ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111c2d]/35 p-4 backdrop-blur-md">
-          <div className="w-full max-w-2xl rounded-[1.75rem] bg-[#f9f9ff] p-6 shadow-[0_32px_64px_rgba(17,28,45,0.18)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color:color-mix(in_srgb,var(--surface)_55%,transparent)] p-4 backdrop-blur-md">
+          <div className="w-full max-w-2xl rounded-[1.75rem] bg-[var(--surface)] p-6 shadow-[0_32px_64px_rgba(17,28,45,0.18)] ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)]">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] font-extrabold tracking-[0.24em] text-[#434656]">
+                <p className="text-[11px] font-extrabold tracking-[0.24em] text-[var(--on-surface-variant)]">
                   {glossaryText.title}
                 </p>
-                <h3 className="font-headline mt-1 text-2xl font-extrabold tracking-tight text-[#111c2d]">
+                <h3 className="font-headline mt-1 text-2xl font-extrabold tracking-tight text-[var(--on-surface)]">
                   {editingTerm ? glossaryText.editTerm : glossaryText.addTerm}
                 </h3>
               </div>
-              <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#003ec7] uppercase">
+              <span className="rounded-full bg-[var(--secondary-container)] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[var(--primary)] uppercase">
                 {formState.enabled ? glossaryText.enabled : glossaryText.disabled}
               </span>
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <label className="block">
-                <span className="mb-1 block text-sm font-bold text-[#434656]">
+                <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
                   {glossaryText.sourceTerm}
                 </span>
                 <input
@@ -530,12 +530,12 @@ export default function GlossaryManager({
                       source_term: event.target.value,
                     }))
                   }
-                  className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
+                  className="w-full rounded-xl bg-[var(--surface-container-lowest)] px-3 py-2 text-sm text-[var(--on-surface)] outline-none ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] transition focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--primary)_25%,transparent)]"
                 />
               </label>
 
               <label className="block">
-                <span className="mb-1 block text-sm font-bold text-[#434656]">
+                <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
                   {glossaryText.targetTerm}
                 </span>
                 <input
@@ -547,12 +547,12 @@ export default function GlossaryManager({
                       target_term: event.target.value,
                     }))
                   }
-                  className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
+                  className="w-full rounded-xl bg-[var(--surface-container-lowest)] px-3 py-2 text-sm text-[var(--on-surface)] outline-none ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] transition focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--primary)_25%,transparent)]"
                 />
               </label>
 
               <label className="block">
-                <span className="mb-1 block text-sm font-bold text-[#434656]">
+                <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
                   {glossaryText.sourceLang}
                 </span>
                 <input
@@ -564,12 +564,12 @@ export default function GlossaryManager({
                       source_lang: event.target.value,
                     }))
                   }
-                  className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
+                  className="w-full rounded-xl bg-[var(--surface-container-lowest)] px-3 py-2 text-sm text-[var(--on-surface)] outline-none ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] transition focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--primary)_25%,transparent)]"
                 />
               </label>
 
               <label className="block">
-                <span className="mb-1 block text-sm font-bold text-[#434656]">
+                <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
                   {glossaryText.targetLang}
                 </span>
                 <input
@@ -581,13 +581,13 @@ export default function GlossaryManager({
                       target_lang: event.target.value,
                     }))
                   }
-                  className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
+                  className="w-full rounded-xl bg-[var(--surface-container-lowest)] px-3 py-2 text-sm text-[var(--on-surface)] outline-none ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] transition focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--primary)_25%,transparent)]"
                 />
               </label>
             </div>
 
             <label className="mt-4 block">
-              <span className="mb-1 block text-sm font-bold text-[#434656]">
+              <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
                 {glossaryText.note}
               </span>
               <textarea
@@ -599,11 +599,11 @@ export default function GlossaryManager({
                   }))
                 }
                 rows={4}
-                className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
+                className="w-full rounded-xl bg-[var(--surface-container-lowest)] px-3 py-2 text-sm text-[var(--on-surface)] outline-none ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] transition focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--primary)_25%,transparent)]"
               />
             </label>
 
-            <label className="mt-4 inline-flex items-center gap-3 rounded-xl bg-[#f0f3ff] px-4 py-3 text-sm font-semibold text-[#434656]">
+            <label className="mt-4 inline-flex items-center gap-3 rounded-xl bg-[var(--surface-container-low)] px-4 py-3 text-sm font-semibold text-[var(--on-surface-variant)]">
               <input
                 type="checkbox"
                 checked={formState.enabled}
@@ -613,13 +613,13 @@ export default function GlossaryManager({
                     enabled: event.target.checked,
                   }))
                 }
-                className="h-4 w-4 rounded border-[#c3c5d9]"
+                className="h-4 w-4 rounded border-[var(--outline-variant)]"
               />
               {glossaryText.enableTerm}
             </label>
 
             {errorMessage ? (
-              <p className="mt-4 rounded-xl bg-[#ffdad6] px-3 py-2 text-sm text-[#93000a]">
+              <p className="mt-4 rounded-xl bg-[var(--error-container)] px-3 py-2 text-sm text-[var(--error)]">
                 {errorMessage}
               </p>
             ) : null}
@@ -628,7 +628,7 @@ export default function GlossaryManager({
               <button
                 type="button"
                 onClick={() => setShowDialog(false)}
-                className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-[#434656] shadow-sm transition hover:bg-[#dee8ff]"
+                className="rounded-xl bg-[var(--surface-container-lowest)] px-4 py-2 text-sm font-bold text-[var(--on-surface-variant)] shadow-sm ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_20%,transparent)] transition hover:bg-[var(--surface-container-high)]"
               >
                 {glossaryText.cancel}
               </button>

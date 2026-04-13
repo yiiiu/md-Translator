@@ -10,9 +10,16 @@ const markdown = new MarkdownIt({
 
 const fencePattern = /(^|\n)```([^\n`]*)\n([\s\S]*?)\n```(?=\n|$)/g;
 
-export async function renderMarkdown(source: string): Promise<string> {
+export async function renderMarkdown(
+  source: string,
+  themeMode: "light" | "dark" = "light"
+): Promise<string> {
   const highlightedBlocks: string[] = [];
-  const markdownWithoutFences = await replaceFencedCode(source, highlightedBlocks);
+  const markdownWithoutFences = await replaceFencedCode(
+    source,
+    highlightedBlocks,
+    themeMode
+  );
   let rendered = markdown.render(markdownWithoutFences);
 
   highlightedBlocks.forEach((block, index) => {
@@ -25,7 +32,11 @@ export async function renderMarkdown(source: string): Promise<string> {
   return rendered;
 }
 
-async function replaceFencedCode(source: string, highlightedBlocks: string[]) {
+async function replaceFencedCode(
+  source: string,
+  highlightedBlocks: string[],
+  themeMode: "light" | "dark"
+) {
   let cursor = 0;
   let output = "";
 
@@ -37,7 +48,9 @@ async function replaceFencedCode(source: string, highlightedBlocks: string[]) {
     output += prefix;
 
     const marker = `@@SHIKI_BLOCK_${highlightedBlocks.length}@@`;
-    highlightedBlocks.push(await highlightCode(code, parseLanguage(rawInfo)));
+    highlightedBlocks.push(
+      await highlightCode(code, parseLanguage(rawInfo), themeMode)
+    );
     output += marker;
 
     cursor = start + fullMatch.length;
@@ -51,11 +64,15 @@ function parseLanguage(info: string) {
   return info.trim().split(/\s+/)[0] || "text";
 }
 
-async function highlightCode(code: string, language: string) {
+async function highlightCode(
+  code: string,
+  language: string,
+  themeMode: "light" | "dark"
+) {
   try {
     return await codeToHtml(code, {
       lang: language as BundledLanguage,
-      theme: "github-light",
+      theme: themeMode === "dark" ? "github-dark" : "github-light",
     });
   } catch {
     return `<pre class="shiki fallback"><code>${escapeHtml(code)}</code></pre>`;

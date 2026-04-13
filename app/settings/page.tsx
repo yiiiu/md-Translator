@@ -21,9 +21,9 @@ export default async function SettingsPage({
   const languages = listGlossaryLanguages();
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-[#f9f9ff] text-[#111c2d]">
+    <main className="flex h-screen flex-col overflow-hidden bg-[var(--background)] text-[var(--on-surface)]">
       <AppHeader uiLanguage={settings.ui_language} />
-      <div className="min-h-0 flex-1 overflow-hidden bg-[#f0f3ff]">
+      <div className="min-h-0 flex-1 overflow-hidden bg-[var(--surface-container-low)]">
         <SettingsWorkspace
           initialTab={normalizeTab(params.tab)}
           initialSettings={settings}

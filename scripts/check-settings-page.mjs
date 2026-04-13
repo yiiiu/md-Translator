@@ -118,7 +118,7 @@ const appHeader = readFileSync("components/AppHeader.tsx", "utf8");
 for (const expected of [
   'href: "/settings"',
   'pathname.startsWith("/settings")',
-  "useTranslationStore",
+  "useAppSettingsStore",
   "appSettingsHydrated",
 ]) {
   if (!appHeader.includes(expected)) {
@@ -148,8 +148,15 @@ if (splitView.includes("1500")) {
   throw new Error("SplitView must not hardcode the auto-translate debounce");
 }
 
+const appStore = readFileSync("stores/app-settings.ts", "utf8");
+for (const expected of ["applyAppSettings", "setThemeMode", "uiLanguage", "themeMode"]) {
+  if (!appStore.includes(expected)) {
+    throw new Error(`app settings store must include ${expected}`);
+  }
+}
+
 const store = readFileSync("stores/translation.ts", "utf8");
-for (const expected of ["applyAppSettings", "setAppSettings", "uiLanguage"]) {
+for (const expected of ["rawInput", "setRawInput", "setTargetLang"]) {
   if (!store.includes(expected)) {
     throw new Error(`translation store must include ${expected}`);
   }

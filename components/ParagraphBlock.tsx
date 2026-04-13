@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { renderMarkdown } from "@/lib/markdown-renderer";
+import { resolveThemeMode } from "@/lib/theme";
 import { getUiText } from "@/lib/ui-text";
 import { retryParagraph } from "@/services/api";
+import { useAppSettingsStore } from "@/stores/app-settings";
 import { type Paragraph, useTranslationStore } from "@/stores/translation";
 
 interface Props {
@@ -11,7 +13,9 @@ interface Props {
 }
 
 export default function ParagraphBlock({ paragraph }: Props) {
-  const { engine, targetLang, uiLanguage } = useTranslationStore();
+  const { engine, targetLang } = useTranslationStore();
+  const uiLanguage = useAppSettingsStore((state) => state.uiLanguage);
+  const themeMode = useAppSettingsStore((state) => state.themeMode);
   const paragraphText = getUiText(uiLanguage).paragraph;
   const statusLabels: Partial<Record<Paragraph["status"], string>> = {
     translating: paragraphText.translating,
@@ -21,11 +25,16 @@ export default function ParagraphBlock({ paragraph }: Props) {
   const content = paragraph.translated || paragraph.original;
   const [renderedContent, setRenderedContent] = useState("");
   const [retrying, setRetrying] = useState(false);
+  const prefersDark =
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches
+      : false;
+  const resolvedTheme = resolveThemeMode(themeMode, prefersDark);
 
   useEffect(() => {
     let active = true;
 
-    void renderMarkdown(content).then((html) => {
+    void renderMarkdown(content, resolvedTheme).then((html) => {
       if (active) {
         setRenderedContent(html);
       }
@@ -34,7 +43,7 @@ export default function ParagraphBlock({ paragraph }: Props) {
     return () => {
       active = false;
     };
-  }, [content]);
+  }, [content, resolvedTheme]);
 
   async function handleRetry() {
     if (retrying) return;
@@ -54,13 +63,13 @@ export default function ParagraphBlock({ paragraph }: Props) {
       data-paragraph-id={paragraph.id}
       className={`group relative mx-3 my-1.5 rounded-xl px-4 py-3 transition-colors ${
         paragraph.status === "error"
-          ? "bg-[#ffdad6]/70 text-[#93000a]"
+          ? "bg-[color:color-mix(in_srgb,var(--error-container)_70%,transparent)] text-[var(--error)]"
           : paragraph.status === "translating"
-            ? "bg-[#d5e3fc]/55"
-            : "hover:bg-[#f0f3ff]"
+            ? "bg-[color:color-mix(in_srgb,var(--secondary-container)_55%,transparent)]"
+            : "hover:bg-[color:color-mix(in_srgb,var(--surface-container-low)_75%,transparent)]"
       }`}
     >
-      <div className="pr-20 break-words font-mono text-sm text-[#111c2d]">
+      <div className="pr-20 break-words font-mono text-sm text-[var(--on-surface)]">
         <div
           className="markdown-rendered"
           dangerouslySetInnerHTML={{ __html: renderedContent }}
@@ -71,8 +80,8 @@ export default function ParagraphBlock({ paragraph }: Props) {
         <div
           className={`absolute top-3 right-4 rounded-full px-2 py-0.5 text-[9px] font-extrabold tracking-[0.18em] ${
             paragraph.status === "error"
-              ? "bg-white text-[#ba1a1a]"
-              : "bg-[#d5e3fc] text-[#57657a]"
+              ? "bg-[var(--surface-container-lowest)] text-[var(--error)]"
+              : "bg-[var(--secondary-container)] text-[var(--on-surface-variant)]"
           }`}
         >
           {statusLabel}
@@ -80,7 +89,7 @@ export default function ParagraphBlock({ paragraph }: Props) {
       ) : null}
 
       {paragraph.status === "error" ? (
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[#93000a]">
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[var(--error)]">
           {paragraph.errorMessage ? (
             <p className="min-w-0 flex-1">{paragraph.errorMessage}</p>
           ) : null}
@@ -89,7 +98,7 @@ export default function ParagraphBlock({ paragraph }: Props) {
             onClick={handleRetry}
             disabled={retrying}
             aria-label={paragraphText.retry}
-            className="rounded-full bg-white px-3 py-1 font-bold text-[#ba1a1a] shadow-sm transition hover:bg-[#fff7f6] disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full bg-[var(--surface-container-lowest)] px-3 py-1 font-bold text-[var(--error)] shadow-sm transition hover:bg-[var(--error-container)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {retrying ? paragraphText.retrying : paragraphText.retry}
           </button>

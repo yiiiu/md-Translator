@@ -247,16 +247,16 @@ export default function EngineConfig({
     <div
       className={
         embedded
-          ? "rounded-[1.5rem] bg-white p-6 shadow-[0_24px_48px_rgba(17,28,45,0.06)]"
-          : "custom-scrollbar max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-[#f9f9ff] p-6 shadow-[0_32px_64px_rgba(17,28,45,0.18)] ring-1 ring-[#c3c5d9]/20"
+          ? "rounded-[1.5rem] bg-[var(--surface-container-lowest)] p-6 shadow-[0_24px_48px_rgba(17,28,45,0.06)] ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_18%,transparent)]"
+          : "custom-scrollbar max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-[var(--surface)] p-6 shadow-[0_32px_64px_rgba(17,28,45,0.18)] ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)]"
       }
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[11px] font-extrabold tracking-[0.24em] text-[#434656]">
+          <p className="text-[11px] font-extrabold tracking-[0.24em] text-[var(--on-surface-variant)]">
             {providerText.sectionTag}
           </p>
-          <h2 className="font-headline mt-1 text-2xl font-extrabold tracking-tight text-[#111c2d]">
+          <h2 className="font-headline mt-1 text-2xl font-extrabold tracking-tight text-[var(--on-surface)]">
             {panelTitle}
           </h2>
         </div>
@@ -265,7 +265,7 @@ export default function EngineConfig({
       <div className="mt-5 space-y-4">
         {isCustomEngine ? (
           <label className="block">
-            <span className="mb-1 block text-sm font-bold text-[#434656]">
+            <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
               {providerText.providerName}
             </span>
             <input
@@ -273,13 +273,13 @@ export default function EngineConfig({
               value={providerName}
               onChange={(event) => setProviderName(event.target.value)}
               placeholder={providerText.relayPlaceholder}
-              className="w-full rounded-xl bg-[#f9f9ff] px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
+              className="w-full rounded-xl bg-[var(--surface-container-lowest)] px-3 py-2 text-sm text-[var(--on-surface)] outline-none ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] transition placeholder:text-[color:color-mix(in_srgb,var(--on-surface-variant)_75%,transparent)] focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--primary)_25%,transparent)]"
             />
           </label>
         ) : null}
 
         <label className="block">
-          <span className="mb-1 block text-sm font-bold text-[#434656]">
+          <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
             {providerText.apiKey}
           </span>
           <span className="relative block">
@@ -288,12 +288,12 @@ export default function EngineConfig({
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
               placeholder={apiKeyConfigured ? "sk-..." : "sk-..."}
-              className="w-full rounded-xl bg-[#f9f9ff] px-3 py-2 pr-10 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
+              className="w-full rounded-xl bg-[var(--surface-container-lowest)] px-3 py-2 pr-10 text-sm text-[var(--on-surface)] outline-none ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] transition placeholder:text-[color:color-mix(in_srgb,var(--on-surface-variant)_75%,transparent)] focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--primary)_25%,transparent)]"
             />
             <button
               type="button"
               onClick={() => setShowApiKey((current) => !current)}
-              className="absolute top-1/2 right-2 -translate-y-1/2 rounded-lg p-1 text-[#737688] transition hover:bg-[#dee8ff] hover:text-[#003ec7]"
+              className="absolute top-1/2 right-2 -translate-y-1/2 rounded-lg p-1 text-[var(--on-surface-variant)] transition hover:bg-[var(--surface-container-high)] hover:text-[var(--primary)]"
               aria-label={showApiKey ? providerText.hideApiKey : providerText.showApiKey}
               title={showApiKey ? providerText.hideApiKey : providerText.showApiKey}
             >
@@ -305,12 +305,12 @@ export default function EngineConfig({
             </button>
           </span>
           {apiKeyConfigured ? (
-            <p className="mt-1 text-xs text-[#737688]">{providerText.apiKeyHint}</p>
+            <p className="mt-1 text-xs text-[var(--on-surface-variant)]">{providerText.apiKeyHint}</p>
           ) : null}
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-bold text-[#434656]">
+          <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
             {providerText.model}
           </span>
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_16rem]">
@@ -319,21 +319,21 @@ export default function EngineConfig({
               value={model}
               onChange={(event) => setModel(event.target.value)}
               placeholder={DEFAULT_MODEL}
-              className="w-full rounded-xl bg-[#f9f9ff] px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
+              className="w-full rounded-xl bg-[var(--surface-container-lowest)] px-3 py-2 text-sm text-[var(--on-surface)] outline-none ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] transition placeholder:text-[color:color-mix(in_srgb,var(--on-surface-variant)_75%,transparent)] focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--primary)_25%,transparent)]"
             />
             <AppSelect
               value={model.trim() || DEFAULT_MODEL}
               onValueChange={setModel}
               options={modelOptions}
               ariaLabel={providerText.model}
-              triggerClassName="w-full justify-between bg-[#f9f9ff] px-3 py-2 text-sm shadow-none ring-[#c3c5d9]/25 hover:bg-[#f5f7ff]"
+              triggerClassName="w-full justify-between bg-[var(--surface-container-lowest)] px-3 py-2 text-sm shadow-none ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] hover:bg-[var(--surface-container-low)]"
             />
           </div>
-          <p className="mt-1 text-xs text-[#737688]">{providerText.modelHint}</p>
+          <p className="mt-1 text-xs text-[var(--on-surface-variant)]">{providerText.modelHint}</p>
         </label>
 
         <label className="block">
-          <span className="mb-1 block text-sm font-bold text-[#434656]">
+          <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
             {providerText.baseUrl}
           </span>
           <input
@@ -345,10 +345,10 @@ export default function EngineConfig({
                 ? providerText.customBaseUrlPlaceholder
                 : DEFAULT_OPENAI_BASE_URL
             }
-            className="w-full rounded-xl bg-[#f9f9ff] px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
+            className="w-full rounded-xl bg-[var(--surface-container-lowest)] px-3 py-2 text-sm text-[var(--on-surface)] outline-none ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_25%,transparent)] transition placeholder:text-[color:color-mix(in_srgb,var(--on-surface-variant)_75%,transparent)] focus:ring-2 focus:ring-[color:color-mix(in_srgb,var(--primary)_25%,transparent)]"
           />
           {isCustomEngine ? (
-            <p className="mt-1 text-xs text-[#737688]">{providerText.baseUrlHint}</p>
+            <p className="mt-1 text-xs text-[var(--on-surface-variant)]">{providerText.baseUrlHint}</p>
           ) : null}
         </label>
 
@@ -357,7 +357,7 @@ export default function EngineConfig({
             type="button"
             onClick={handleFetchModels}
             disabled={!apiKey.trim() || !baseUrl.trim() || fetchingModels}
-            className="rounded-xl bg-[#f0f3ff] px-3 py-2 text-sm font-bold text-[#434656] shadow-sm transition hover:bg-[#dee8ff] disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-[var(--surface-container-low)] px-3 py-2 text-sm font-bold text-[var(--on-surface-variant)] shadow-sm transition hover:bg-[var(--surface-container-high)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {fetchingModels ? providerText.fetchingModels : providerText.fetchModels}
           </button>
@@ -365,7 +365,7 @@ export default function EngineConfig({
             type="button"
             onClick={handleTestModel}
             disabled={!apiKey.trim() || !baseUrl.trim() || !model.trim() || testingModel}
-            className="rounded-xl bg-[#d5e3fc] px-3 py-2 text-sm font-bold text-[#003ec7] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-[var(--secondary-container)] px-3 py-2 text-sm font-bold text-[var(--primary)] transition hover:bg-[var(--surface-container-high)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {testingModel ? providerText.testingModel : providerText.testModel}
           </button>
@@ -375,8 +375,8 @@ export default function EngineConfig({
           <p
             className={`rounded-xl px-3 py-2 text-sm ${
               statusKind === "success"
-                ? "bg-[#d5e3fc] text-[#003ec7]"
-                : "bg-[#ffdad6] text-[#93000a]"
+                ? "bg-[var(--secondary-container)] text-[var(--primary)]"
+                : "bg-[var(--error-container)] text-[var(--error)]"
             }`}
           >
             {statusMessage}
@@ -390,7 +390,7 @@ export default function EngineConfig({
             type="button"
             onClick={() => setShowDeleteConfirm(true)}
             disabled={deleting}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#ffdad6] px-4 py-2 text-sm font-bold text-[#93000a] transition hover:bg-[#ffd0ca] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-[var(--error-container)] px-4 py-2 text-sm font-bold text-[var(--error)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Trash2 className="h-4 w-4" strokeWidth={1.8} />
             {deleting ? providerText.deleting : providerText.delete}
@@ -404,7 +404,7 @@ export default function EngineConfig({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-[#434656] shadow-sm transition hover:bg-[#dee8ff]"
+              className="rounded-xl bg-[var(--surface-container-lowest)] px-4 py-2 text-sm font-bold text-[var(--on-surface-variant)] shadow-sm ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_20%,transparent)] transition hover:bg-[var(--surface-container-high)]"
             >
               Cancel
             </button>
@@ -449,7 +449,7 @@ export default function EngineConfig({
         role="dialog"
         aria-modal="true"
         aria-label={panelTitle}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-[#111c2d]/40 p-4 backdrop-blur-md"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-[color:color-mix(in_srgb,var(--surface)_55%,transparent)] p-4 backdrop-blur-md"
       >
         {content}
       </div>

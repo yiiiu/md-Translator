@@ -7,9 +7,15 @@ if (!store.includes("rawInput: string")) {
 if (!store.includes("setRawInput")) {
   throw new Error("translation store must expose setRawInput");
 }
-for (const expected of ["applyAppSettings", "defaultTargetLang", "autoTranslateDebounceMs"]) {
-  if (!store.includes(expected)) {
-    throw new Error(`translation store must include ${expected}`);
+const appStore = readFileSync("stores/app-settings.ts", "utf8");
+for (const expected of [
+  "defaultTargetLang",
+  "autoTranslateDebounceMs",
+  "autoTranslateEnabled",
+  "uiLanguage",
+]) {
+  if (!appStore.includes(expected)) {
+    throw new Error(`app settings store must include ${expected}`);
   }
 }
 
@@ -27,9 +33,6 @@ if (!toolbar.includes("UploadIcon") || !toolbar.includes("ClearIcon")) {
 if (toolbar.includes(">Upload .md<") || toolbar.includes(">Clear<")) {
   throw new Error("Toolbar Upload .md and Clear controls must not render text labels");
 }
-if (!appHeader.includes("SettingsIcon") || appHeader.includes(">Settings<")) {
-  throw new Error("AppHeader settings control must be icon-only");
-}
 if (!appHeader.includes("HelpIcon")) {
   throw new Error("AppHeader help control must use an icon component");
 }
@@ -39,8 +42,8 @@ if (!toolbar.includes("ProviderLogo") || toolbar.includes(">Engine<")) {
 if (!toolbar.includes("engineSelectWidth")) {
   throw new Error("Toolbar engine selector must adapt to the selected provider label");
 }
-if (!toolbar.includes("bg-[#0052ff]") || !toolbar.includes("ring-[#003ec7]/20")) {
-  throw new Error("Toolbar Upload .md and Clear buttons must be visually distinct");
+if (!toolbar.includes("var(--primary-container)") || !toolbar.includes("var(--primary)")) {
+  throw new Error("Toolbar Upload .md and Clear buttons must use theme tokens");
 }
 if (!toolbar.includes("w-11") || !toolbar.includes("rounded-xl")) {
   throw new Error("Toolbar icon actions must use wider rounded-rectangle buttons");

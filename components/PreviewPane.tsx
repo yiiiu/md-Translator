@@ -4,6 +4,7 @@ import { Code2 as CodeIcon, Eye as EyeIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { RefObject, UIEvent, UIEventHandler } from "react";
 import { getUiText } from "@/lib/ui-text";
+import { useAppSettingsStore } from "@/stores/app-settings";
 import { type Paragraph, useTranslationStore } from "@/stores/translation";
 import ParagraphBlock from "./ParagraphBlock";
 
@@ -28,7 +29,7 @@ export default function PreviewPane({
   emptyState,
   viewMode = "preview",
 }: Props) {
-  const uiLanguage = useTranslationStore((state) => state.uiLanguage);
+  const uiLanguage = useAppSettingsStore((state) => state.uiLanguage);
   const text = getUiText(uiLanguage).splitView;
   const isTranslation =
     title === text.translation || title.toLowerCase() === "translation" || title === "译文";
@@ -90,7 +91,7 @@ export default function PreviewPane({
       <div className="flex items-center justify-between px-2">
         <span
           className={`text-[10px] font-extrabold tracking-[0.24em] ${
-            isTranslation ? "text-[#003ec7]" : "text-[#434656]"
+            isTranslation ? "text-[var(--primary)]" : "text-[var(--on-surface-variant)]"
           }`}
         >
           {title}
@@ -98,14 +99,14 @@ export default function PreviewPane({
         <div className="flex items-center gap-2">
           {isTranslation ? (
             <>
-              <div className="flex items-center gap-1 rounded-lg bg-white p-0.5 ring-1 ring-[#c3c5d9]/20">
+              <div className="flex items-center gap-1 rounded-lg bg-[var(--surface-container-lowest)] p-0.5 ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)]">
                 <button
                   type="button"
                   onClick={() => setMode("preview")}
                   className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold tracking-[0.14em] transition ${
                     mode === "preview"
-                      ? "bg-[#d5e3fc] text-[#003ec7]"
-                      : "text-[#737688] hover:text-[#003ec7]"
+                      ? "bg-[var(--secondary-container)] text-[var(--primary)]"
+                      : "text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
                   }`}
                 >
                   <EyeIcon className="h-3 w-3" strokeWidth={1.8} />
@@ -116,8 +117,8 @@ export default function PreviewPane({
                   onClick={() => setMode("code")}
                   className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold tracking-[0.14em] transition ${
                     mode === "code"
-                      ? "bg-[#d5e3fc] text-[#003ec7]"
-                      : "text-[#737688] hover:text-[#003ec7]"
+                      ? "bg-[var(--secondary-container)] text-[var(--primary)]"
+                      : "text-[var(--on-surface-variant)] hover:text-[var(--primary)]"
                   }`}
                 >
                   <CodeIcon className="h-3 w-3" strokeWidth={1.8} />
@@ -128,7 +129,7 @@ export default function PreviewPane({
                 type="button"
                 onClick={handleCopy}
                 disabled={!outputMarkdown}
-                className="rounded-full px-2 py-1 text-xs font-bold text-[#737688] transition hover:bg-[#dee8ff] hover:text-[#003ec7] disabled:cursor-not-allowed disabled:opacity-45"
+                className="rounded-full px-2 py-1 text-xs font-bold text-[var(--on-surface-variant)] transition hover:bg-[var(--surface-container-high)] hover:text-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-45"
                 aria-label={text.copy}
               >
                 {text.copy}
@@ -137,14 +138,14 @@ export default function PreviewPane({
                 type="button"
                 onClick={handleDownload}
                 disabled={!outputMarkdown}
-                className="rounded-full px-2 py-1 text-xs font-bold text-[#737688] transition hover:bg-[#dee8ff] hover:text-[#003ec7] disabled:cursor-not-allowed disabled:opacity-45"
+                className="rounded-full px-2 py-1 text-xs font-bold text-[var(--on-surface-variant)] transition hover:bg-[var(--surface-container-high)] hover:text-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-45"
                 aria-label={text.save}
               >
                 {text.save}
               </button>
             </>
           ) : (
-            <span className="rounded-md bg-white px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-[#737688] ring-1 ring-[#c3c5d9]/20">
+            <span className="rounded-md bg-[var(--surface-container-lowest)] px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-[var(--on-surface-variant)] ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)]">
               {text.fileName}
             </span>
           )}
@@ -156,7 +157,11 @@ export default function PreviewPane({
         onScroll={mode === "preview" ? onScroll : undefined}
         className={`surface-pane custom-scrollbar flex min-h-0 flex-1 rounded-xl ${
           mode === "code" ? "overflow-hidden" : "overflow-y-auto"
-        } ${isTranslation ? "ring-1 ring-[#003ec7]/10" : "ring-1 ring-[#c3c5d9]/15"}`}
+        } ${
+          isTranslation
+            ? "ring-1 ring-[color:color-mix(in_srgb,var(--primary)_18%,transparent)]"
+            : "ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_18%,transparent)]"
+        }`}
       >
         {mode === "code" ? (
           <div className="grid min-h-0 flex-1 grid-cols-[3.25rem_minmax(0,1fr)]">
@@ -174,11 +179,11 @@ export default function PreviewPane({
               onChange={(event) => handleCodeChange(event.target.value)}
               onScroll={handleCodeScroll}
               placeholder={nextEmptyState}
-              className="custom-scrollbar min-h-0 flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3 font-mono text-xs leading-5 text-[#111c2d] outline-none placeholder:text-[#b0b3c8]"
+              className="custom-scrollbar min-h-0 flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3 font-mono text-xs leading-5 text-[var(--on-surface)] outline-none placeholder:text-[color:color-mix(in_srgb,var(--on-surface-variant)_55%,white)]"
             />
           </div>
         ) : paragraphs.length === 0 ? (
-          <div className="grid min-h-full flex-1 place-items-center px-8 py-16 text-center text-sm text-[#737688]">
+          <div className="grid min-h-full flex-1 place-items-center px-8 py-16 text-center text-sm text-[var(--on-surface-variant)]">
             {nextEmptyState}
           </div>
         ) : (

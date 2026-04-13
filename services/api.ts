@@ -107,6 +107,7 @@ export interface GlossaryTermRequest {
 
 export interface AppSettingsResponse {
   ui_language: "en" | "zh-CN";
+  theme_mode: "system" | "light" | "dark";
   default_target_lang: string;
   auto_translate_enabled: boolean;
   auto_translate_debounce_ms: number;

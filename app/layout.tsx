@@ -33,9 +33,10 @@ export default function RootLayout({
   return (
     <html
       lang={settings.ui_language}
+      data-theme-mode={settings.theme_mode}
       className={`${inter.variable} ${manrope.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="h-full overflow-hidden bg-[#f9f9ff] text-[#111c2d]">
+      <body className="h-full overflow-hidden bg-[var(--background)] text-[var(--on-surface)]">
         {children}
       </body>
     </html>

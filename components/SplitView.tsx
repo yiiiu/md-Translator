@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, type DragEvent, type UIEvent } from "react";
 import { startTranslation } from "@/services/api";
+import { useAppSettingsStore } from "@/stores/app-settings";
 import { useTranslationStore } from "@/stores/translation";
 import { parseMarkdown } from "@/utils/markdown-parser";
 import { useScrollSync } from "@/utils/scroll-sync";
@@ -33,10 +34,14 @@ export default function SplitView() {
     setRawInput,
     setParagraphs,
     reset,
-    autoTranslateEnabled,
-    autoTranslateDebounceMs,
-    uiLanguage,
   } = useTranslationStore();
+  const uiLanguage = useAppSettingsStore((state) => state.uiLanguage);
+  const autoTranslateEnabled = useAppSettingsStore(
+    (state) => state.autoTranslateEnabled
+  );
+  const autoTranslateDebounceMs = useAppSettingsStore(
+    (state) => state.autoTranslateDebounceMs
+  );
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const leftLineNumberRef = useRef<HTMLDivElement>(null);
@@ -163,10 +168,10 @@ export default function SplitView() {
     <div className="grid h-full min-h-0 flex-1 gap-5 lg:grid-cols-2 lg:gap-8">
       <section className="flex min-h-0 flex-col gap-3">
         <div className="flex items-center justify-between px-2">
-          <span className="text-[10px] font-extrabold tracking-[0.24em] text-[#434656]">
+          <span className="text-[10px] font-extrabold tracking-[0.24em] text-[var(--on-surface-variant)]">
             {labels.original}
           </span>
-          <span className="rounded-md bg-white px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-[#737688] ring-1 ring-[#c3c5d9]/20">
+          <span className="rounded-md bg-[var(--surface-container-lowest)] px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-[var(--on-surface-variant)] ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)]">
             {labels.fileName}
           </span>
         </div>
@@ -174,7 +179,7 @@ export default function SplitView() {
         <div
           ref={leftRef}
           onScroll={handleLeftScroll}
-          className="surface-pane custom-scrollbar grid min-h-0 flex-1 grid-cols-[3.25rem_minmax(0,1fr)] overflow-hidden rounded-xl ring-1 ring-[#c3c5d9]/15"
+          className="surface-pane custom-scrollbar grid min-h-0 flex-1 grid-cols-[3.25rem_minmax(0,1fr)] overflow-hidden rounded-xl ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_18%,transparent)]"
         >
           <div
             ref={leftLineNumberRef}
@@ -192,7 +197,7 @@ export default function SplitView() {
             onDragOver={(event) => event.preventDefault()}
             onDrop={handleDrop}
             placeholder={labels.placeholder}
-            className="custom-scrollbar h-full min-h-0 w-full flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3 font-mono text-sm leading-5 text-[#111c2d] outline-none placeholder:text-[#b0b3c8]"
+            className="custom-scrollbar h-full min-h-0 w-full flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3 font-mono text-sm leading-5 text-[var(--on-surface)] outline-none placeholder:text-[color:color-mix(in_srgb,var(--on-surface-variant)_55%,white)]"
           />
         </div>
       </section>

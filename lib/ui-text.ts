@@ -71,6 +71,11 @@ const TEXT = {
       historyDescription: "History stays as a dedicated page for reviewing past translation runs.",
       appearanceTitle: "Workspace Preferences",
       appearanceDescription: "Set the default behavior for the editor and translation workflow.",
+      themeMode: "Theme",
+      themeModeDescription: "Theme changes apply immediately and auto-save.",
+      themeSystem: "Follow System",
+      themeLight: "Light",
+      themeDark: "Dark",
       interfaceLanguage: "Interface Language",
       defaultTargetLanguage: "Default Translation Language",
       autoTranslate: "Auto Translate",
@@ -80,6 +85,8 @@ const TEXT = {
       milliseconds: "ms",
       saveGeneral: "Save Settings",
       discardGeneral: "Discard Changes",
+      themeSaved: "Theme updated.",
+      themeSaveFailed: "Failed to update theme.",
       generalSaved: "Settings saved.",
       generalSaveFailed: "Failed to save settings.",
       sideDescription: "Choose a section",
@@ -373,6 +380,23 @@ const TEXT = {
     },
   },
 } as const;
+
+const mutableText = TEXT as unknown as {
+  "zh-CN": {
+    settings: Record<string, string>;
+  };
+};
+
+Object.assign(mutableText["zh-CN"].settings, {
+  themeMode: "\u4e3b\u9898",
+  themeModeDescription:
+    "\u4e3b\u9898\u5207\u6362\u4f1a\u7acb\u5373\u751f\u6548\u5e76\u81ea\u52a8\u4fdd\u5b58\u3002",
+  themeSystem: "\u8ddf\u968f\u7cfb\u7edf",
+  themeLight: "\u6d45\u8272",
+  themeDark: "\u6df1\u8272",
+  themeSaved: "\u4e3b\u9898\u5df2\u66f4\u65b0\u3002",
+  themeSaveFailed: "\u66f4\u65b0\u4e3b\u9898\u5931\u8d25\u3002",
+});
 
 export function getUiText(language: UiLanguage) {
   return TEXT[language];

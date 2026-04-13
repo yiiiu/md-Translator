@@ -12,6 +12,7 @@ export async function PATCH(request: NextRequest) {
   const nextSettings = normalizeAppSettings({
     ...current,
     ui_language: body.ui_language,
+    theme_mode: body.theme_mode,
     default_target_lang: body.default_target_lang,
     auto_translate_enabled:
       typeof body.auto_translate_enabled === "boolean"

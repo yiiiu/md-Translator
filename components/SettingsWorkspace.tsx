@@ -10,9 +10,10 @@ import {
   PanelLeftOpen,
   Sparkles,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import type { AppSettings, UiLanguage } from "@/lib/app-settings";
+import { useMemo, useRef, useState } from "react";
+import type { AppSettings, ThemeMode, UiLanguage } from "@/lib/app-settings";
 import { getTargetLanguageOptions, getUiText } from "@/lib/ui-text";
+import { useAppSettingsStore } from "@/stores/app-settings";
 import {
   updateAppSettings,
   type GlossaryTermResponse,
@@ -28,6 +29,10 @@ const UI_LANGUAGE_OPTIONS: AppSelectOption[] = [
   { value: "en", label: "English" },
   { value: "zh-CN", label: "中文" },
 ];
+
+function normalizeThemeMode(value: string): ThemeMode {
+  return value === "light" || value === "dark" ? value : "system";
+}
 
 function isSettingsTab(value: string | undefined): value is SettingsTab {
   return value === "general" || value === "providers" || value === "glossary";
@@ -49,6 +54,7 @@ export default function SettingsWorkspace({
   const [activeTab, setActiveTab] = useState<SettingsTab>(
     isSettingsTab(initialTab) ? initialTab : "general"
   );
+  const initializedRef = useRef(false);
   const [settingsForm, setSettingsForm] = useState<AppSettings>(initialSettings);
   const [savedSettings, setSavedSettings] = useState<AppSettings>(initialSettings);
   const [savingGeneral, setSavingGeneral] = useState(false);
@@ -56,10 +62,33 @@ export default function SettingsWorkspace({
   const [generalStatus, setGeneralStatus] = useState<"idle" | "success" | "error">(
     "idle"
   );
+  const [savingTheme, setSavingTheme] = useState(false);
+  const [themeMessage, setThemeMessage] = useState<string | null>(null);
+  const [themeStatus, setThemeStatus] = useState<"idle" | "success" | "error">("idle");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const setThemeMode = useAppSettingsStore((state) => state.setThemeMode);
+
+  if (!initializedRef.current) {
+    useAppSettingsStore.getState().applyAppSettings(initialSettings);
+    initializedRef.current = true;
+  }
 
   const uiLanguage: UiLanguage = settingsForm.ui_language;
   const text = getUiText(uiLanguage);
+  const settingsText = text.settings as typeof text.settings & {
+    themeMode: string;
+    themeModeDescription: string;
+    themeSystem: string;
+    themeLight: string;
+    themeDark: string;
+    themeSaved: string;
+    themeSaveFailed: string;
+  };
+  const themeModeOptions: AppSelectOption[] = [
+    { value: "system", label: settingsText.themeSystem },
+    { value: "light", label: settingsText.themeLight },
+    { value: "dark", label: settingsText.themeDark },
+  ];
   const targetLanguageSelectOptions: AppSelectOption[] = getTargetLanguageOptions(
     uiLanguage
   ).map((option) => ({
@@ -123,9 +152,18 @@ export default function SettingsWorkspace({
         return;
       }
 
+      const previousDefaultTargetLang =
+        useAppSettingsStore.getState().defaultTargetLang;
+      const translationState = useTranslationStore.getState();
       setSavedSettings(nextSettings);
       setSettingsForm(nextSettings);
-      useTranslationStore.getState().applyAppSettings(nextSettings);
+      useAppSettingsStore.getState().applyAppSettings(nextSettings);
+      if (
+        !translationState.rawInput &&
+        translationState.targetLang === previousDefaultTargetLang
+      ) {
+        translationState.setTargetLang(nextSettings.default_target_lang);
+      }
       setGeneralStatus("success");
       setGeneralMessage(text.settings.generalSaved);
     } catch (error) {
@@ -138,26 +176,95 @@ export default function SettingsWorkspace({
     }
   };
 
+  const handleThemeModeChange = async (value: string) => {
+    const nextThemeMode = normalizeThemeMode(value);
+    const previousThemeMode = savedSettings.theme_mode;
+
+    if (
+      nextThemeMode === previousThemeMode &&
+      nextThemeMode === settingsForm.theme_mode
+    ) {
+      return;
+    }
+
+    // Theme changes apply immediately and auto-save.
+    setThemeMode(nextThemeMode);
+    setSettingsForm((current) => ({
+      ...current,
+      theme_mode: nextThemeMode,
+    }));
+    setSavingTheme(true);
+    setThemeStatus("idle");
+    setThemeMessage(null);
+
+    try {
+      const nextSettings = await updateAppSettings({ theme_mode: nextThemeMode });
+      if (nextSettings.error) {
+        throw new Error(nextSettings.error || settingsText.themeSaveFailed);
+      }
+
+      useAppSettingsStore.getState().applyAppSettings(nextSettings);
+      setSavedSettings((current) => ({
+        ...current,
+        theme_mode: nextSettings.theme_mode,
+      }));
+      setSettingsForm((current) => ({
+        ...current,
+        theme_mode: nextSettings.theme_mode,
+      }));
+      setThemeStatus("success");
+      setThemeMessage(settingsText.themeSaved);
+    } catch (error) {
+      setThemeMode(previousThemeMode);
+      setSettingsForm((current) => ({
+        ...current,
+        theme_mode: previousThemeMode,
+      }));
+      setThemeStatus("error");
+      setThemeMessage(
+        error instanceof Error ? error.message : settingsText.themeSaveFailed
+      );
+    } finally {
+      setSavingTheme(false);
+    }
+  };
+
   const renderGeneralTab = () => (
     <div className="space-y-6">
-      <section className="rounded-[1.5rem] bg-white p-6 shadow-[0_24px_48px_rgba(17,28,45,0.06)]">
+      <section className="rounded-[1.5rem] bg-[var(--surface-container-lowest)] p-6 shadow-[0_24px_48px_rgba(17,28,45,0.06)]">
         <div className="flex items-start gap-3">
-          <div className="mt-1 rounded-2xl bg-[#d5e3fc] p-3 text-[#003ec7]">
+          <div className="mt-1 rounded-2xl bg-[var(--secondary-container)] p-3 text-[var(--primary)]">
             <Languages className="h-5 w-5" strokeWidth={1.8} />
           </div>
           <div>
-            <h2 className="font-headline text-2xl font-extrabold tracking-tight text-[#111c2d]">
+            <h2 className="font-headline text-2xl font-extrabold tracking-tight text-[var(--on-surface)]">
               {text.settings.appearanceTitle}
             </h2>
-            <p className="mt-2 max-w-2xl text-sm text-[#57657a]">
+            <p className="mt-2 max-w-2xl text-sm text-[var(--on-surface-variant)]">
               {text.settings.appearanceDescription}
             </p>
           </div>
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2">
+        <div className="mt-8 grid gap-5 md:grid-cols-3">
           <label className="block">
-            <span className="mb-1 block text-sm font-bold text-[#434656]">
+            <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
+              {settingsText.themeMode}
+            </span>
+            <AppSelect
+              value={settingsForm.theme_mode}
+              onValueChange={(value) => void handleThemeModeChange(value)}
+              options={themeModeOptions}
+              ariaLabel={settingsText.themeMode}
+              triggerClassName="w-full justify-between bg-[var(--surface)] px-3 py-3 text-sm shadow-none ring-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)] hover:bg-[var(--surface-container-low)]"
+            />
+            <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
+              {settingsText.themeModeDescription}
+            </p>
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
               {text.settings.interfaceLanguage}
             </span>
             <AppSelect
@@ -170,12 +277,12 @@ export default function SettingsWorkspace({
               }
               options={UI_LANGUAGE_OPTIONS}
               ariaLabel={text.settings.interfaceLanguage}
-              triggerClassName="w-full justify-between bg-[#f9f9ff] px-3 py-3 text-sm shadow-none ring-[#c3c5d9]/25 hover:bg-[#f5f7ff]"
+              triggerClassName="w-full justify-between bg-[var(--surface)] px-3 py-3 text-sm shadow-none ring-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)] hover:bg-[var(--surface-container-low)]"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-sm font-bold text-[#434656]">
+            <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
               {text.settings.defaultTargetLanguage}
             </span>
             <AppSelect
@@ -188,23 +295,38 @@ export default function SettingsWorkspace({
               }
               options={targetLanguageSelectOptions}
               ariaLabel={text.settings.defaultTargetLanguage}
-              triggerClassName="w-full justify-between bg-[#f9f9ff] px-3 py-3 text-sm shadow-none ring-[#c3c5d9]/25 hover:bg-[#f5f7ff]"
+              triggerClassName="w-full justify-between bg-[var(--surface)] px-3 py-3 text-sm shadow-none ring-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)] hover:bg-[var(--surface-container-low)]"
             />
           </label>
         </div>
 
+        {themeMessage ? (
+          <p
+            className={`mt-4 rounded-xl px-3 py-2 text-sm ${
+              themeStatus === "success"
+                ? "bg-[var(--secondary-container)] text-[var(--primary)]"
+                : "bg-[var(--error-container)] text-[var(--error)]"
+            }`}
+          >
+            {savingTheme ? `${text.provider.saving}...` : themeMessage}
+          </p>
+        ) : null}
+
         {interfaceLanguageDirty ? (
-          <div className="mt-4 flex items-start gap-3 rounded-xl bg-[#fff4dd] px-3 py-2.5 text-sm text-[#8a4b00] ring-1 ring-[#f3b24f]/35">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#d47a00]" strokeWidth={1.9} />
+          <div className="mt-4 flex items-start gap-3 rounded-xl bg-[color:color-mix(in_srgb,var(--secondary-container)_80%,#fff4dd)] px-3 py-2.5 text-sm text-[var(--on-surface-variant)] ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_28%,transparent)]">
+            <AlertCircle
+              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--primary)]"
+              strokeWidth={1.9}
+            />
             <p>{pendingLanguageHint}</p>
           </div>
         ) : null}
 
-        <div className="mt-6 space-y-5 rounded-[1.25rem] bg-[#f9f9ff] p-5">
+        <div className="mt-6 space-y-5 rounded-[1.25rem] bg-[var(--surface)] p-5">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="font-bold text-[#111c2d]">{text.settings.autoTranslate}</p>
-              <p className="mt-1 text-sm text-[#57657a]">
+              <p className="font-bold text-[var(--on-surface)]">{text.settings.autoTranslate}</p>
+              <p className="mt-1 text-sm text-[var(--on-surface-variant)]">
                 {text.settings.autoTranslateDescription}
               </p>
             </div>
@@ -220,16 +342,16 @@ export default function SettingsWorkspace({
                 }
                 className="peer sr-only"
               />
-              <span className="h-7 w-12 rounded-full bg-[#d8e3fb] transition peer-checked:bg-[#003ec7]" />
-              <span className="absolute left-1 h-5 w-5 rounded-full bg-white transition peer-checked:translate-x-5" />
+              <span className="h-7 w-12 rounded-full bg-[var(--surface-container-highest)] transition peer-checked:bg-[var(--primary)]" />
+              <span className="absolute left-1 h-5 w-5 rounded-full bg-[var(--surface-container-lowest)] transition peer-checked:translate-x-5" />
             </label>
           </div>
 
           <label className="block">
-            <span className="mb-1 block text-sm font-bold text-[#434656]">
+            <span className="mb-1 block text-sm font-bold text-[var(--on-surface-variant)]">
               {text.settings.debounce}
             </span>
-            <p className="mb-3 text-sm text-[#57657a]">
+            <p className="mb-3 text-sm text-[var(--on-surface-variant)]">
               {text.settings.debounceDescription}
             </p>
             <div className="flex items-center gap-3">
@@ -245,9 +367,9 @@ export default function SettingsWorkspace({
                     auto_translate_debounce_ms: Number(event.target.value),
                   }))
                 }
-                className="w-full accent-[#003ec7]"
+                className="w-full accent-[var(--primary)]"
               />
-              <span className="min-w-20 rounded-xl bg-white px-3 py-2 text-center text-sm font-bold text-[#003ec7] ring-1 ring-[#c3c5d9]/20">
+              <span className="min-w-20 rounded-xl bg-[var(--surface-container-lowest)] px-3 py-2 text-center text-sm font-bold text-[var(--primary)] ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)]">
                 {settingsForm.auto_translate_debounce_ms} {text.settings.milliseconds}
               </span>
             </div>
@@ -258,8 +380,8 @@ export default function SettingsWorkspace({
           <p
             className={`mt-5 rounded-xl px-3 py-2 text-sm ${
               generalStatus === "success"
-                ? "bg-[#d5e3fc] text-[#003ec7]"
-                : "bg-[#ffdad6] text-[#93000a]"
+                ? "bg-[var(--secondary-container)] text-[var(--primary)]"
+                : "bg-[var(--error-container)] text-[var(--error)]"
             }`}
           >
             {generalMessage}
@@ -275,7 +397,7 @@ export default function SettingsWorkspace({
               setGeneralStatus("idle");
             }}
             disabled={!hasGeneralChanges || savingGeneral}
-            className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-[#434656] shadow-sm transition hover:bg-[#dee8ff] disabled:cursor-not-allowed disabled:opacity-55"
+            className="rounded-xl bg-[var(--surface-container-lowest)] px-4 py-2 text-sm font-bold text-[var(--on-surface-variant)] shadow-sm transition hover:bg-[var(--surface-container-high)] disabled:cursor-not-allowed disabled:opacity-55"
           >
             {text.settings.discardGeneral}
           </button>
@@ -283,26 +405,26 @@ export default function SettingsWorkspace({
             type="button"
             onClick={() => void handleSaveGeneral()}
             disabled={!hasGeneralChanges || savingGeneral}
-            className="rounded-xl bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-4 py-2 text-sm font-bold text-white shadow-[0_14px_28px_rgba(0,82,255,0.22)] transition hover:shadow-[0_18px_36px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
+            className="rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-container)] px-4 py-2 text-sm font-bold text-[var(--surface-container-lowest)] shadow-[0_14px_28px_rgba(0,82,255,0.22)] transition hover:shadow-[0_18px_36px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
           >
             {savingGeneral ? text.provider.saving : text.settings.saveGeneral}
           </button>
         </div>
       </section>
 
-      <section className="rounded-[1.5rem] bg-[#d5e3fc] p-6 text-[#111c2d] shadow-[0_24px_48px_rgba(17,28,45,0.06)]">
+      <section className="rounded-[1.5rem] bg-[var(--secondary-container)] p-6 text-[var(--on-surface)] shadow-[0_24px_48px_rgba(17,28,45,0.06)]">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="font-headline text-xl font-extrabold tracking-tight">
               {text.history.title}
             </h3>
-            <p className="mt-2 max-w-2xl text-sm text-[#434656]">
+            <p className="mt-2 max-w-2xl text-sm text-[var(--on-surface-variant)]">
               {text.settings.historyDescription}
             </p>
           </div>
           <Link
             href="/history"
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-bold text-[#003ec7] shadow-sm transition hover:bg-[#f9f9ff]"
+            className="inline-flex items-center gap-2 rounded-xl bg-[var(--surface-container-lowest)] px-4 py-2 text-sm font-bold text-[var(--primary)] shadow-sm transition hover:bg-[var(--surface)]"
           >
             <History className="h-4 w-4" strokeWidth={1.8} />
             {text.settings.historyLink}
@@ -334,10 +456,10 @@ export default function SettingsWorkspace({
           : "280px minmax(0,1fr)",
       }}
     >
-      <aside className="min-h-0 bg-[#e7eeff] xl:sticky xl:top-0">
-        <div className="flex h-full min-h-0 flex-col border-r border-[#c3c5d9]/25 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]">
+      <aside className="min-h-0 bg-[var(--surface-container)] xl:sticky xl:top-0">
+        <div className="flex h-full min-h-0 flex-col border-r border-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)] transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]">
           <div
-            className={`overflow-hidden border-b border-[#c3c5d9]/25 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            className={`overflow-hidden border-b border-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)] transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               sidebarCollapsed
                 ? "flex h-16 items-center justify-center px-2 py-2"
                 : "px-6 py-6"
@@ -357,10 +479,10 @@ export default function SettingsWorkspace({
                     : "max-h-28 max-w-[220px] translate-x-0 opacity-100"
                 }`}
               >
-                <h1 className="font-headline text-3xl font-extrabold tracking-tight text-[#111c2d]">
+                <h1 className="font-headline text-3xl font-extrabold tracking-tight text-[var(--on-surface)]">
                   {text.settings.title}
                 </h1>
-                <p className="mt-2 text-sm text-[#57657a]">
+                <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
                   {text.settings.sideDescription}
                 </p>
               </div>
@@ -369,7 +491,7 @@ export default function SettingsWorkspace({
                 onClick={() => setSidebarCollapsed((current) => !current)}
                 aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-[#434656] shadow-sm transition-all duration-200 hover:scale-[1.02] hover:bg-[#f9f9ff] hover:text-[#003ec7]"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[var(--surface-container-lowest)] text-[var(--on-surface-variant)] shadow-sm transition-all duration-200 hover:scale-[1.02] hover:bg-[var(--surface)] hover:text-[var(--primary)]"
               >
                 {sidebarCollapsed ? (
                   <PanelLeftOpen className="h-4 w-4" strokeWidth={1.8} />
@@ -396,8 +518,8 @@ export default function SettingsWorkspace({
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center transition-all duration-200 ${
                     active
-                      ? "bg-white text-[#003ec7] shadow-sm"
-                      : "text-[#57657a] hover:bg-white/60 hover:text-[#111c2d]"
+                      ? "bg-[var(--surface-container-lowest)] text-[var(--primary)] shadow-sm"
+                      : "text-[var(--on-surface-variant)] hover:bg-[color:color-mix(in_srgb,var(--surface-container-lowest)_60%,transparent)] hover:text-[var(--on-surface)]"
                   } ${
                     sidebarCollapsed
                       ? "mx-auto h-12 w-12 justify-center rounded-2xl px-0"
@@ -426,10 +548,10 @@ export default function SettingsWorkspace({
       <div className="custom-scrollbar min-h-0 overflow-y-auto">
         <div className="mx-auto max-w-6xl space-y-6 px-4 py-4 lg:px-8 lg:py-6">
           <section className="px-1 py-2">
-            <h2 className="font-headline text-4xl font-extrabold tracking-tight text-[#111c2d]">
+            <h2 className="font-headline text-4xl font-extrabold tracking-tight text-[var(--on-surface)]">
               {activeTabMeta?.label || text.settings.title}
             </h2>
-            <p className="mt-3 max-w-3xl text-sm text-[#57657a] lg:text-base">
+            <p className="mt-3 max-w-3xl text-sm text-[var(--on-surface-variant)] lg:text-base">
               {getHeaderDescription()}
             </p>
           </section>

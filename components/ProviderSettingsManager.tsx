@@ -92,13 +92,13 @@ export default function ProviderSettingsManager({
 
   return (
     <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)] xl:items-start">
-      <aside className="flex min-h-[28rem] flex-col rounded-[1.5rem] bg-white p-5 shadow-[0_24px_48px_rgba(17,28,45,0.06)] xl:max-h-[calc(100vh-14rem)]">
+      <aside className="flex min-h-[28rem] flex-col rounded-[1.5rem] bg-[var(--surface-container-lowest)] p-5 shadow-[0_24px_48px_rgba(17,28,45,0.06)] ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_18%,transparent)] xl:max-h-[calc(100vh-14rem)]">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-[11px] font-extrabold tracking-[0.24em] text-[#434656]">
+            <p className="text-[11px] font-extrabold tracking-[0.24em] text-[var(--on-surface-variant)]">
               {text.settings.providers}
             </p>
-            <p className="mt-1 text-sm text-[#737688]">{providerCountLabel}</p>
+            <p className="mt-1 text-sm text-[var(--on-surface-variant)]">{providerCountLabel}</p>
           </div>
           <button
             type="button"
@@ -122,8 +122,8 @@ export default function ProviderSettingsManager({
                 onClick={() => setSelectedEngineId(option.value)}
                 className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
                   active
-                    ? "bg-[#f0f3ff] text-[#003ec7] ring-1 ring-[#0052ff]/15"
-                    : "text-[#434656] hover:bg-[#f9f9ff]"
+                    ? "bg-[var(--surface-container-low)] text-[var(--primary)] ring-1 ring-[color:color-mix(in_srgb,var(--primary)_18%,transparent)]"
+                    : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)]"
                 }`}
               >
                 <ProviderLogo
@@ -133,15 +133,15 @@ export default function ProviderSettingsManager({
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold">{option.label}</p>
-                  <p className="truncate text-xs text-[#737688]">
+                  <p className="truncate text-xs text-[var(--on-surface-variant)]">
                     {option.baseUrl || "https://api.openai.com/v1"}
                   </p>
                 </div>
                 <span
                   className={`rounded-full px-2 py-1 text-[10px] font-extrabold tracking-[0.16em] ${
                     option.configured
-                      ? "bg-[#d5e3fc] text-[#003ec7]"
-                      : "bg-[#f0f3ff] text-[#737688]"
+                      ? "bg-[var(--secondary-container)] text-[var(--primary)]"
+                      : "bg-[var(--surface-container-low)] text-[var(--on-surface-variant)]"
                   }`}
                 >
                   {option.configured

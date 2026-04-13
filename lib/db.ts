@@ -4,6 +4,7 @@ import path from "path";
 import {
   DEFAULT_APP_SETTINGS,
   normalizeAppSettings,
+  normalizeThemeMode,
   type AppSettings,
 } from "./app-settings";
 
@@ -24,6 +25,7 @@ export function getDb(): Database.Database {
   _db.pragma("foreign_keys = ON");
 
   createTables(_db);
+  ensureAppSettingsColumns(_db);
   return _db;
 }
 
@@ -76,6 +78,7 @@ function createTables(db: Database.Database) {
     CREATE TABLE IF NOT EXISTS app_settings (
       id                          INTEGER PRIMARY KEY CHECK (id = 1),
       ui_language                 TEXT NOT NULL DEFAULT 'en',
+      theme_mode                  TEXT NOT NULL DEFAULT 'system',
       default_target_lang         TEXT NOT NULL DEFAULT 'zh-CN',
       auto_translate_enabled      INTEGER NOT NULL DEFAULT 1,
       auto_translate_debounce_ms  INTEGER NOT NULL DEFAULT 1500,
@@ -88,18 +91,32 @@ function createTables(db: Database.Database) {
     `INSERT INTO app_settings (
       id,
       ui_language,
+      theme_mode,
       default_target_lang,
       auto_translate_enabled,
       auto_translate_debounce_ms
     )
-    VALUES (1, ?, ?, ?, ?)
+    VALUES (1, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO NOTHING`
   ).run(
     DEFAULT_APP_SETTINGS.ui_language,
+    DEFAULT_APP_SETTINGS.theme_mode,
     DEFAULT_APP_SETTINGS.default_target_lang,
     DEFAULT_APP_SETTINGS.auto_translate_enabled ? 1 : 0,
     DEFAULT_APP_SETTINGS.auto_translate_debounce_ms
   );
+}
+
+function ensureAppSettingsColumns(db: Database.Database) {
+  const columns = db
+    .prepare("PRAGMA table_info(app_settings)")
+    .all() as Array<{ name: string }>;
+
+  if (!columns.some((column) => column.name === "theme_mode")) {
+    db.exec(
+      "ALTER TABLE app_settings ADD COLUMN theme_mode TEXT NOT NULL DEFAULT 'system'"
+    );
+  }
 }
 
 // --- engine_configs ---
@@ -421,6 +438,7 @@ export function deleteGlossaryTerm(id: number): void {
 
 interface AppSettingsRow {
   ui_language: string;
+  theme_mode: string;
   default_target_lang: string;
   auto_translate_enabled: number;
   auto_translate_debounce_ms: number;
@@ -431,6 +449,7 @@ function normalizeAppSettingsRow(row: AppSettingsRow | undefined): AppSettings {
     row
       ? {
           ui_language: row.ui_language === "zh-CN" ? "zh-CN" : "en",
+          theme_mode: normalizeThemeMode(row.theme_mode),
           default_target_lang: row.default_target_lang,
           auto_translate_enabled: Boolean(row.auto_translate_enabled),
           auto_translate_debounce_ms: row.auto_translate_debounce_ms,
@@ -442,7 +461,7 @@ function normalizeAppSettingsRow(row: AppSettingsRow | undefined): AppSettings {
 export function getAppSettings(): AppSettings {
   const row = getDb()
     .prepare(
-      `SELECT ui_language, default_target_lang, auto_translate_enabled, auto_translate_debounce_ms
+      `SELECT ui_language, theme_mode, default_target_lang, auto_translate_enabled, auto_translate_debounce_ms
        FROM app_settings
        WHERE id = 1`
     )
@@ -463,13 +482,15 @@ export function upsertAppSettings(input: Partial<AppSettings>): AppSettings {
       `INSERT INTO app_settings (
         id,
         ui_language,
+        theme_mode,
         default_target_lang,
         auto_translate_enabled,
         auto_translate_debounce_ms
       )
-      VALUES (1, ?, ?, ?, ?)
+      VALUES (1, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         ui_language = excluded.ui_language,
+        theme_mode = excluded.theme_mode,
         default_target_lang = excluded.default_target_lang,
         auto_translate_enabled = excluded.auto_translate_enabled,
         auto_translate_debounce_ms = excluded.auto_translate_debounce_ms,
@@ -477,6 +498,7 @@ export function upsertAppSettings(input: Partial<AppSettings>): AppSettings {
     )
     .run(
       nextSettings.ui_language,
+      nextSettings.theme_mode,
       nextSettings.default_target_lang,
       nextSettings.auto_translate_enabled ? 1 : 0,
       nextSettings.auto_translate_debounce_ms

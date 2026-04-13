@@ -4,11 +4,12 @@ import { Activity } from "lucide-react";
 import { useState } from "react";
 import { formatUiText, getUiText } from "@/lib/ui-text";
 import { retryFailedParagraphs } from "@/services/api";
+import { useAppSettingsStore } from "@/stores/app-settings";
 import { useTranslationStore } from "@/stores/translation";
 
 export default function StatusBar() {
-  const { paragraphs, connectionLost, engine, targetLang, uiLanguage } =
-    useTranslationStore();
+  const { paragraphs, connectionLost, engine, targetLang } = useTranslationStore();
+  const uiLanguage = useAppSettingsStore((state) => state.uiLanguage);
   const text = getUiText(uiLanguage).statusBar;
   const [retryingFailures, setRetryingFailures] = useState(false);
 
@@ -33,11 +34,11 @@ export default function StatusBar() {
   }
 
   return (
-    <section className="rounded-xl bg-[#e7eeff] p-3 ring-1 ring-[#c3c5d9]/10">
+    <section className="rounded-xl bg-[var(--surface-container)] p-3 ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_18%,transparent)]">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Activity className="h-3.5 w-3.5 text-[#737688]" strokeWidth={1.8} />
-          <span className="text-[10px] font-extrabold tracking-[0.24em] text-[#434656]">
+          <Activity className="h-3.5 w-3.5 text-[var(--on-surface-variant)]" strokeWidth={1.8} />
+          <span className="text-[10px] font-extrabold tracking-[0.24em] text-[var(--on-surface-variant)]">
             {text.title}
           </span>
         </div>
@@ -47,27 +48,27 @@ export default function StatusBar() {
               type="button"
               onClick={handleRetryFailures}
               disabled={!canRetryFailures}
-              className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold tracking-[0.12em] text-[#ba1a1a] shadow-sm transition hover:bg-[#ffdad6] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full bg-[var(--surface-container-lowest)] px-3 py-1 text-[10px] font-extrabold tracking-[0.12em] text-[var(--error)] shadow-sm transition hover:bg-[var(--error-container)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {retryingFailures ? text.retrying : `${text.retryFailed} (${errors})`}
             </button>
           ) : null}
-          <span className="text-[10px] font-extrabold tracking-[0.18em] text-[#003ec7]">
+          <span className="text-[10px] font-extrabold tracking-[0.18em] text-[var(--primary)]">
             {connectionLost ? text.connectionLost : text.ready}
           </span>
         </div>
       </div>
 
       <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
-        <div className="custom-scrollbar h-16 overflow-y-auto font-mono text-[11px] leading-5 text-[#434656]">
+        <div className="custom-scrollbar h-16 overflow-y-auto font-mono text-[11px] leading-5 text-[var(--on-surface-variant)]">
           <p>
-            <span className="text-[#737688]/70">[status]</span>{" "}
+            <span className="text-[color:color-mix(in_srgb,var(--on-surface-variant)_70%,transparent)]">[status]</span>{" "}
             {total > 0
               ? formatUiText(text.parsed, { count: total })
               : text.waiting}
           </p>
           <p>
-            <span className="text-[#737688]/70">[translate]</span>{" "}
+            <span className="text-[color:color-mix(in_srgb,var(--on-surface-variant)_70%,transparent)]">[translate]</span>{" "}
             {formatUiText(text.translated, { done, total })}
             {translating > 0
               ? `, ${formatUiText(text.inProgress, { count: translating })}`
@@ -75,24 +76,24 @@ export default function StatusBar() {
             {errors > 0 ? `, ${formatUiText(text.errors, { count: errors })}` : ""}
           </p>
           {connectionLost ? (
-            <p className="text-[#ba1a1a]">
-              <span className="text-[#737688]/70">[network]</span> {text.streamLost}
+            <p className="text-[var(--error)]">
+              <span className="text-[color:color-mix(in_srgb,var(--on-surface-variant)_70%,transparent)]">[network]</span> {text.streamLost}
             </p>
           ) : (
             <p>
-              <span className="text-[#737688]/70">[workspace]</span> {text.applying}
+              <span className="text-[color:color-mix(in_srgb,var(--on-surface-variant)_70%,transparent)]">[workspace]</span> {text.applying}
             </p>
           )}
         </div>
 
         <div className="min-w-44">
-          <div className="mb-1 flex items-center justify-between text-[10px] font-extrabold tracking-[0.14em] text-[#434656]">
+          <div className="mb-1 flex items-center justify-between text-[10px] font-extrabold tracking-[0.14em] text-[var(--on-surface-variant)]">
             <span>{text.progress}</span>
             <span>{Math.round(progress)}%</span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-[#d8e3fb]">
+          <div className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-container-highest)]">
             <div
-              className="h-full rounded-full bg-[#003ec7] transition-all duration-300"
+              className="h-full rounded-full bg-[var(--primary)] transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>

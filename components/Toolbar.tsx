@@ -8,6 +8,7 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import type { UiLanguage } from "@/lib/app-settings";
 import { getTargetLanguageOptions, getUiText } from "@/lib/ui-text";
 import { fetchEngines, startTranslation } from "@/services/api";
+import { useAppSettingsStore } from "@/stores/app-settings";
 import { useTranslationStore } from "@/stores/translation";
 import ProviderLogo from "./ProviderLogo";
 import AppSelect, { type AppSelectOption } from "./ui/AppSelect";
@@ -26,9 +27,16 @@ function isMarkdownFile(file: File) {
   return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".txt");
 }
 
-export default function Toolbar({ uiLanguage }: { uiLanguage: UiLanguage }) {
-  const text = getUiText(uiLanguage);
-  const targetLanguageOptions = getTargetLanguageOptions(uiLanguage);
+export default function Toolbar({
+  uiLanguage,
+}: {
+  uiLanguage?: UiLanguage;
+}) {
+  const storeUiLanguage = useAppSettingsStore((state) => state.uiLanguage);
+  const appSettingsHydrated = useAppSettingsStore((state) => state.appSettingsHydrated);
+  const resolvedUiLanguage = appSettingsHydrated ? storeUiLanguage : uiLanguage || "en";
+  const text = getUiText(resolvedUiLanguage);
+  const targetLanguageOptions = getTargetLanguageOptions(resolvedUiLanguage);
   const {
     engine,
     targetLang,
@@ -129,7 +137,7 @@ export default function Toolbar({ uiLanguage }: { uiLanguage: UiLanguage }) {
   };
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f0f3ff] px-4 py-3 lg:px-8">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--outline-variant)_18%,transparent)] bg-[var(--surface-container-low)] px-4 py-3 lg:px-8">
       <div className="flex flex-wrap items-center gap-3">
         <AppSelect
           value={engine}
@@ -161,21 +169,21 @@ export default function Toolbar({ uiLanguage }: { uiLanguage: UiLanguage }) {
           ariaLabel="Target language"
           prefix={
             <>
-              <span className="rounded-lg bg-[#d5e3fc] px-3 py-1.5 text-[#003ec7]">
+              <span className="rounded-lg bg-[var(--secondary-container)] px-3 py-1.5 text-[var(--primary)]">
                 {text.toolbar.auto}
               </span>
-              <span className="text-[#737688]">{text.toolbar.to}</span>
+              <span className="text-[var(--on-surface-variant)]">{text.toolbar.to}</span>
             </>
           }
-          triggerClassName="p-1 text-xs font-extrabold tracking-[0.18em] text-[#003ec7]"
+          triggerClassName="p-1 text-xs font-extrabold tracking-[0.18em] text-[var(--primary)]"
         />
 
-        <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
+        <span className="rounded-full bg-[var(--secondary-container)] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[var(--on-surface-variant)]">
           {paragraphs.length} {text.toolbar.paragraphs}
         </span>
 
         <label
-          className="grid h-8 w-11 cursor-pointer place-items-center rounded-xl bg-[#0052ff] text-white shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#003ec7]"
+          className="grid h-8 w-11 cursor-pointer place-items-center rounded-xl bg-[var(--primary-container)] text-[var(--surface-container-lowest)] shadow-sm ring-1 ring-[color:color-mix(in_srgb,var(--primary)_24%,transparent)] transition hover:bg-[var(--primary)]"
           aria-label={text.toolbar.upload}
           title={text.toolbar.upload}
         >
@@ -191,7 +199,7 @@ export default function Toolbar({ uiLanguage }: { uiLanguage: UiLanguage }) {
         <button
           type="button"
           onClick={reset}
-          className="grid h-8 w-11 place-items-center rounded-xl bg-white text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff]"
+          className="grid h-8 w-11 place-items-center rounded-xl bg-[var(--surface-container-lowest)] text-[var(--primary)] shadow-sm ring-1 ring-[color:color-mix(in_srgb,var(--primary)_24%,transparent)] transition hover:bg-[var(--surface-container)]"
           aria-label={text.toolbar.clear}
           title={text.toolbar.clear}
         >
@@ -203,7 +211,7 @@ export default function Toolbar({ uiLanguage }: { uiLanguage: UiLanguage }) {
         type="button"
         onClick={handleTranslate}
         disabled={!canTranslate}
-        className="rounded-full bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-7 py-2.5 text-sm font-bold text-white shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
+        className="rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-container)] px-7 py-2.5 text-sm font-bold text-[var(--surface-container-lowest)] shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
       >
         {translating ? text.toolbar.translating : text.toolbar.translate}
       </button>
