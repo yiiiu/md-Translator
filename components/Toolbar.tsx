@@ -205,10 +205,10 @@ export default function Toolbar() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               type="button"
-              className="grid h-9 w-15 place-items-center rounded-xl text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
+              className="grid h-9 w-10 place-items-center rounded-xl text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
               aria-label="Help"
             >
               ?
@@ -216,7 +216,7 @@ export default function Toolbar() {
             <button
               type="button"
               onClick={() => setShowConfig(true)}
-              className="grid h-9 w-15 place-items-center rounded-xl text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
+              className="grid h-9 w-10 place-items-center rounded-xl text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
               aria-label="Settings"
               title="Settings"
             >

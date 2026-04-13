@@ -39,6 +39,12 @@ if (!toolbar.includes("bg-[#0052ff]") || !toolbar.includes("ring-[#003ec7]/20"))
 if (!toolbar.includes("w-11") || !toolbar.includes("rounded-xl")) {
   throw new Error("Toolbar icon actions must use wider rounded-rectangle buttons");
 }
+if (toolbar.includes("w-15")) {
+  throw new Error("Toolbar top icon buttons must not be overly wide");
+}
+if (!toolbar.includes("flex items-center gap-1")) {
+  throw new Error("Toolbar top icon buttons must use a compact gap");
+}
 
 const splitView = readFileSync("components/SplitView.tsx", "utf8");
 if (!splitView.includes("<textarea")) {
