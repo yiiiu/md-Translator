@@ -1,8 +1,10 @@
 "use client";
 
+import { Eye, EyeOff, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   configureEngine,
+  deleteEngine,
   fetchEngineConfig,
   fetchEngineModels,
   testEngineModel,
@@ -11,6 +13,8 @@ import {
 interface Props {
   engineId: string;
   onClose: () => void;
+  onSaved?: () => void;
+  onDeleteProvider?: (engineId: string) => void;
 }
 
 const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
@@ -20,10 +24,15 @@ function defaultBaseUrlFor(engineId: string) {
   return engineId === "openai" ? DEFAULT_OPENAI_BASE_URL : "";
 }
 
-export default function EngineConfig({ engineId, onClose }: Props) {
+export default function EngineConfig({
+  engineId,
+  onClose,
+  onSaved,
+  onDeleteProvider,
+}: Props) {
   const [providerName, setProviderName] = useState("");
-  const [logoUrl, setLogoUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [baseUrl, setBaseUrl] = useState(defaultBaseUrlFor(engineId));
   const [models, setModels] = useState<Array<{ id: string }>>([]);
@@ -32,10 +41,11 @@ export default function EngineConfig({ engineId, onClose }: Props) {
   const [saving, setSaving] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(false);
   const [testingModel, setTestingModel] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusKind, setStatusKind] = useState<"idle" | "success" | "error">("idle");
 
-  const isCustomEngine = engineId === "custom-openai";
+  const isCustomEngine = engineId !== "openai";
   const modalTitle = isCustomEngine ? "Custom Openai-Compatible Config" : "Openai Config";
   const modelListId = useMemo(() => `engine-models-${engineId}`, [engineId]);
 
@@ -44,8 +54,8 @@ export default function EngineConfig({ engineId, onClose }: Props) {
     setModel(DEFAULT_MODEL);
     setBaseUrl(defaultBaseUrlFor(engineId));
     setModels([]);
+    setShowApiKey(false);
     setProviderName("");
-    setLogoUrl("");
     setConfigured(false);
     setApiKeyConfigured(false);
     setStatusKind("idle");
@@ -65,11 +75,11 @@ export default function EngineConfig({ engineId, onClose }: Props) {
 
       setConfigured(config.configured);
       setApiKeyConfigured(config.api_key_configured);
+      setApiKey(config.api_key || "");
       setModel(config.model || DEFAULT_MODEL);
       setBaseUrl(config.base_url || defaultBaseUrlFor(engineId));
       if (isCustomEngine) {
         setProviderName(config.name || "");
-        setLogoUrl(config.logo_url || "");
       }
     });
 
@@ -137,7 +147,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
 
   const handleSave = async () => {
     const nextApiKey = apiKey.trim();
-    if (!nextApiKey && !apiKeyConfigured) return;
+    if (!nextApiKey) return;
 
     setSaving(true);
     setStatus("idle", null);
@@ -147,7 +157,6 @@ export default function EngineConfig({ engineId, onClose }: Props) {
         model: model || undefined,
         base_url: baseUrl || undefined,
         name: isCustomEngine ? providerName || undefined : undefined,
-        logo_url: isCustomEngine ? logoUrl || undefined : undefined,
       });
 
       if (result.error) {
@@ -157,11 +166,31 @@ export default function EngineConfig({ engineId, onClose }: Props) {
 
       setConfigured(true);
       setApiKeyConfigured(true);
-      onClose();
+      onSaved?.();
     } catch (error) {
       setStatus("error", error instanceof Error ? error.message : "Failed to save config");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!isCustomEngine) return;
+
+    setDeleting(true);
+    setStatus("idle", null);
+    try {
+      const result = await deleteEngine(engineId);
+      if (!result.ok) {
+        setStatus("error", result.error || "Failed to delete provider");
+        return;
+      }
+
+      onDeleteProvider?.(engineId);
+    } catch (error) {
+      setStatus("error", error instanceof Error ? error.message : "Failed to delete provider");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -193,7 +222,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
 
         <div className="mt-5 space-y-4">
           {isCustomEngine ? (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4">
               <label className="block">
                 <span className="mb-1 block text-sm font-bold text-[#434656]">
                   Provider Name
@@ -206,33 +235,36 @@ export default function EngineConfig({ engineId, onClose }: Props) {
                   className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
                 />
               </label>
-              <label className="block">
-                <span className="mb-1 block text-sm font-bold text-[#434656]">
-                  Logo Url
-                </span>
-                <input
-                  type="url"
-                  value={logoUrl}
-                  onChange={(event) => setLogoUrl(event.target.value)}
-                  placeholder="https://example.com/logo.svg"
-                  className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
-                />
-              </label>
             </div>
           ) : null}
 
           <label className="block">
             <span className="mb-1 block text-sm font-bold text-[#434656]">Api Key</span>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(event) => setApiKey(event.target.value)}
-              placeholder={apiKeyConfigured ? "Stored Api key will be reused" : "sk-..."}
-              className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
-            />
+            <span className="relative block">
+              <input
+                type={showApiKey ? "text" : "password"}
+                value={apiKey}
+                onChange={(event) => setApiKey(event.target.value)}
+                placeholder={apiKeyConfigured ? "Stored Api key will be reused" : "sk-..."}
+                className="w-full rounded-xl bg-white px-3 py-2 pr-10 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey((current) => !current)}
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded-lg p-1 text-[#737688] transition hover:bg-[#dee8ff] hover:text-[#003ec7]"
+                aria-label={showApiKey ? "Hide Api key" : "Show Api key"}
+                title={showApiKey ? "Hide Api key" : "Show Api key"}
+              >
+                {showApiKey ? (
+                  <EyeOff className="h-4 w-4" strokeWidth={1.8} />
+                ) : (
+                  <Eye className="h-4 w-4" strokeWidth={1.8} />
+                )}
+              </button>
+            </span>
             {apiKeyConfigured ? (
               <p className="mt-1 text-xs text-[#737688]">
-                Leave blank to keep the saved Api key.
+                Edit the value directly to replace the saved Api key.
               </p>
             ) : null}
           </label>
@@ -270,6 +302,11 @@ export default function EngineConfig({ engineId, onClose }: Props) {
               }
               className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
             />
+            {isCustomEngine ? (
+              <p className="mt-1 text-xs text-[#737688]">
+                Provider icon is derived automatically from the Base Url domain.
+              </p>
+            ) : null}
           </label>
 
           <div className="flex flex-wrap gap-2">
@@ -304,22 +341,38 @@ export default function EngineConfig({ engineId, onClose }: Props) {
           ) : null}
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-[#434656] shadow-sm transition hover:bg-[#dee8ff]"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={(!apiKey.trim() && !apiKeyConfigured) || saving}
-            className="rounded-xl bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-4 py-2 text-sm font-bold text-white shadow-[0_14px_28px_rgba(0,82,255,0.22)] transition hover:shadow-[0_18px_36px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
+        <div className="mt-6 flex items-center justify-between gap-2">
+          {isCustomEngine ? (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#ffdad6] px-4 py-2 text-sm font-bold text-[#93000a] transition hover:bg-[#ffd0ca] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Trash2 className="h-4 w-4" strokeWidth={1.8} />
+              {deleting ? "Deleting..." : "Delete"}
+            </button>
+          ) : (
+            <span />
+          )}
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-[#434656] shadow-sm transition hover:bg-[#dee8ff]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={(!apiKey.trim() && !apiKeyConfigured) || saving}
+              className="rounded-xl bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-4 py-2 text-sm font-bold text-white shadow-[0_14px_28px_rgba(0,82,255,0.22)] transition hover:shadow-[0_18px_36px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

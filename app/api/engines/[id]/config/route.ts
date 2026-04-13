@@ -26,7 +26,11 @@ function readExtra(extra: string | undefined) {
 }
 
 function isSupportedEngine(id: string) {
-  return Boolean(ENGINE_DEFAULT_NAMES[id]);
+  return id === "openai" || id === "custom-openai" || id.startsWith("custom-openai-");
+}
+
+function defaultNameFor(id: string) {
+  return ENGINE_DEFAULT_NAMES[id] || "Custom Provider";
 }
 
 export async function GET(
@@ -42,17 +46,16 @@ export async function GET(
   const config = getEngineConfig(id);
   const apiKey = normalizeString(config?.api_key);
   const baseUrl = normalizeString(config?.base_url);
-  const extra = readExtra(config?.extra);
-  const logoUrl = typeof extra.logo_url === "string" ? normalizeString(extra.logo_url) : "";
 
   return NextResponse.json({
     id,
-    name: config?.name || ENGINE_DEFAULT_NAMES[id],
+    name: config?.name || defaultNameFor(id),
     configured: Boolean(apiKey && (baseUrl || id === "openai")),
     api_key_configured: Boolean(apiKey),
+    api_key: apiKey,
     model: config?.model || "",
     base_url: baseUrl,
-    logo_url: logoUrl,
+    builtin: id === "openai",
   });
 }
 
@@ -73,21 +76,15 @@ export async function POST(
     typeof body.base_url === "string"
       ? normalizeString(body.base_url)
       : existing?.base_url || "";
-  const name = normalizeString(body.name) || existing?.name || ENGINE_DEFAULT_NAMES[id];
+  const name = normalizeString(body.name) || existing?.name || defaultNameFor(id);
   const model = typeof body.model === "string" ? body.model.trim() : existing?.model || "";
   const existingExtra = readExtra(existing?.extra);
-  const logoUrl =
-    typeof body.logo_url === "string"
-      ? normalizeString(body.logo_url)
-      : typeof existingExtra.logo_url === "string"
-        ? normalizeString(existingExtra.logo_url)
-        : "";
 
   if (!apiKey) {
     return NextResponse.json({ error: "api_key is required" }, { status: 400 });
   }
 
-  if (id === "custom-openai" && !baseUrl) {
+  if (id !== "openai" && !baseUrl) {
     return NextResponse.json({ error: "base_url is required" }, { status: 400 });
   }
 
@@ -97,10 +94,11 @@ export async function POST(
     api_key: apiKey,
     model,
     base_url: baseUrl,
-    extra: JSON.stringify({
-      ...existingExtra,
-      logo_url: logoUrl,
-    }),
+    extra: JSON.stringify(
+      Object.fromEntries(
+        Object.entries(existingExtra).filter(([key]) => key !== "logo_url")
+      )
+    ),
   });
 
   return NextResponse.json({ ok: true });

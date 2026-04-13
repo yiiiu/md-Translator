@@ -193,11 +193,13 @@ async function translateGroup(
 }
 
 export function createEngine(engineId: string) {
-  switch (engineId) {
-    case "openai":
-    case "custom-openai":
-      return new OpenAIEngine(engineId);
-    default:
-      throw new Error(`Unknown engine: ${engineId}`);
+  if (
+    engineId === "openai" ||
+    engineId === "custom-openai" ||
+    engineId.startsWith("custom-openai-")
+  ) {
+    return new OpenAIEngine(engineId);
   }
+
+  throw new Error(`Unknown engine: ${engineId}`);
 }

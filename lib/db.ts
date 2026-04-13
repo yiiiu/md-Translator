@@ -91,6 +91,10 @@ export function upsertEngineConfig(cfg: Omit<EngineConfig, "created_at" | "updat
   `).run(cfg.id, cfg.name, cfg.api_key, cfg.model, cfg.base_url, cfg.extra);
 }
 
+export function deleteEngineConfig(id: string): void {
+  getDb().prepare("DELETE FROM engine_configs WHERE id = ?").run(id);
+}
+
 // --- translation_cache ---
 
 export interface CacheEntry {

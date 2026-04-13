@@ -7,7 +7,8 @@ import type { ReactNode } from "react";
 export interface AppSelectOption {
   value: string;
   label: string;
-  logoUrl?: string;
+  baseUrl?: string;
+  builtin?: boolean;
 }
 
 interface AppSelectProps {

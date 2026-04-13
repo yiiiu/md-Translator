@@ -1,7 +1,9 @@
 import { OpenAIEngine } from "@/lib/engines/openai";
 import { NextRequest, NextResponse } from "next/server";
 
-const SUPPORTED_ENGINES = new Set(["openai", "custom-openai"]);
+function isSupportedEngine(id: string) {
+  return id === "openai" || id === "custom-openai" || id.startsWith("custom-openai-");
+}
 
 function normalizeString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
@@ -13,7 +15,7 @@ export async function POST(
 ) {
   const { id } = await params;
 
-  if (!SUPPORTED_ENGINES.has(id)) {
+  if (!isSupportedEngine(id)) {
     return NextResponse.json({ ok: false, error: "Unsupported engine" });
   }
 

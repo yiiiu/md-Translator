@@ -34,8 +34,10 @@ export interface EngineListResponse {
   engines?: Array<{
     id: string;
     name: string;
+    base_url?: string;
     logo_url?: string;
     configured: boolean;
+    builtin?: boolean;
   }>;
 }
 
@@ -55,9 +57,10 @@ export interface EngineConfigResponse {
   name: string;
   configured: boolean;
   api_key_configured: boolean;
+  api_key?: string;
   model: string;
   base_url: string;
-  logo_url?: string;
+  builtin?: boolean;
   error?: string;
 }
 
@@ -66,7 +69,6 @@ interface EngineConfigRequest {
   model?: string;
   base_url?: string;
   name?: string;
-  logo_url?: string;
 }
 
 const RETRY_FAILED_CONCURRENCY = 4;
@@ -248,9 +250,35 @@ export async function fetchEngines(): Promise<EngineListResponse> {
   return (await response.json()) as EngineListResponse;
 }
 
+export async function createEngine(): Promise<{
+  ok?: boolean;
+  id?: string;
+  error?: string;
+}> {
+  const response = await fetch("/api/engines", {
+    method: "POST",
+  });
+
+  return (await response.json()) as {
+    ok?: boolean;
+    id?: string;
+    error?: string;
+  };
+}
+
 export async function fetchEngineConfig(id: string): Promise<EngineConfigResponse> {
   const response = await fetch(`/api/engines/${id}/config`);
   return (await response.json()) as EngineConfigResponse;
+}
+
+export async function deleteEngine(
+  id: string
+): Promise<{ ok?: boolean; error?: string }> {
+  const response = await fetch(`/api/engines/${id}`, {
+    method: "DELETE",
+  });
+
+  return (await response.json()) as { ok?: boolean; error?: string };
 }
 
 export async function configureEngine(

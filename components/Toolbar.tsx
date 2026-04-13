@@ -3,12 +3,13 @@
 import {
   CircleHelp as HelpIcon,
   Eraser as ClearIcon,
+  Plus as PlusIcon,
   Settings as SettingsIcon,
   Upload as UploadIcon,
 } from "lucide-react";
 import { SiOpenai } from "react-icons/si";
 import { useEffect, useState, type ChangeEvent } from "react";
-import { fetchEngines, startTranslation } from "@/services/api";
+import { createEngine, fetchEngines, startTranslation } from "@/services/api";
 import { useTranslationStore } from "@/stores/translation";
 import EngineConfig from "./EngineConfig";
 import AppSelect, { type AppSelectOption } from "./ui/AppSelect";
@@ -21,9 +22,30 @@ const TARGET_LANGUAGES = [
 ];
 
 const DEFAULT_ENGINE_OPTIONS = [
-  { value: "openai", label: "Openai", logoUrl: "" },
-  { value: "custom-openai", label: "Custom Openai-Compatible", logoUrl: "" },
+  {
+    value: "openai",
+    label: "Openai",
+    baseUrl: "https://api.openai.com/v1",
+    builtin: true,
+  },
 ];
+
+function deriveFaviconUrl(baseUrl?: string) {
+  if (!baseUrl) {
+    return "";
+  }
+
+  try {
+    const host = new URL(baseUrl).hostname;
+    if (!host) {
+      return "";
+    }
+
+    return `https://www.google.com/s2/favicons?domain=${host}&sz=64`;
+  } catch {
+    return "";
+  }
+}
 
 function isMarkdownFile(file: File) {
   const name = file.name.toLowerCase();
@@ -33,29 +55,37 @@ function isMarkdownFile(file: File) {
 function ProviderLogo({
   engineId,
   label,
-  logoUrl,
+  baseUrl,
 }: {
   engineId: string;
   label: string;
-  logoUrl?: string;
+  baseUrl?: string;
 }) {
+  const [failedImageUrl, setFailedImageUrl] = useState("");
   const normalized = `${engineId} ${label}`.toLowerCase();
   const isOpenAI = engineId === "openai";
+  const imageUrl = deriveFaviconUrl(baseUrl);
+  const shouldShowImage = Boolean(imageUrl) && failedImageUrl !== imageUrl;
   const mark = normalized.includes("custom")
-      ? "C"
-      : label.trim().charAt(0).toUpperCase() || "A";
+    ? "C"
+    : label.trim().charAt(0).toUpperCase() || "A";
 
   return (
     <span
       aria-label={`${label} provider`}
       className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#111c2d] text-[10px] font-extrabold tracking-[-0.02em] text-white shadow-sm ring-1 ring-[#0052ff]/20"
     >
-      {logoUrl ? (
-        <span
-          aria-hidden="true"
-          className="h-4 w-4 rounded-sm bg-contain bg-center bg-no-repeat"
-          style={{ backgroundImage: `url("${logoUrl}")` }}
-        />
+      {shouldShowImage ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt=""
+            src={imageUrl}
+            aria-hidden="true"
+            className="h-4 w-4 rounded-sm object-contain"
+            onError={() => setFailedImageUrl(imageUrl)}
+          />
+        </>
       ) : isOpenAI ? (
         <SiOpenai className="h-3.5 w-3.5" title="" />
       ) : (
@@ -77,6 +107,7 @@ export default function Toolbar() {
     reset,
   } = useTranslationStore();
   const [translating, setTranslating] = useState(false);
+  const [creatingProvider, setCreatingProvider] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
   const [engineOptions, setEngineOptions] = useState(DEFAULT_ENGINE_OPTIONS);
 
@@ -91,23 +122,60 @@ export default function Toolbar() {
   const refreshEngineOptions = async () => {
     try {
       const data = await fetchEngines();
-      if (!data.engines?.length) return;
-
-      setEngineOptions(
-        data.engines.map((item) => ({
+      const nextOptions =
+        data.engines?.map((item) => ({
           value: item.id,
           label: item.name,
-          logoUrl: item.logo_url || "",
-        }))
-      );
+          baseUrl: item.base_url || "",
+          builtin: item.builtin ?? item.id === "openai",
+        })) || DEFAULT_ENGINE_OPTIONS;
+
+      setEngineOptions(nextOptions);
+
+      const currentEngine = useTranslationStore.getState().engine;
+      if (!nextOptions.some((option) => option.value === currentEngine)) {
+        setEngine("openai");
+      }
+
+      return nextOptions;
     } catch (error) {
       console.error("Failed to load engines:", error);
     }
   };
 
   useEffect(() => {
-    void refreshEngineOptions();
-  }, []);
+    let active = true;
+
+    void (async () => {
+      try {
+        const data = await fetchEngines();
+        if (!active) {
+          return;
+        }
+
+        const nextOptions =
+          data.engines?.map((item) => ({
+            value: item.id,
+            label: item.name,
+            baseUrl: item.base_url || "",
+            builtin: item.builtin ?? item.id === "openai",
+          })) || DEFAULT_ENGINE_OPTIONS;
+
+        setEngineOptions(nextOptions);
+
+        const currentEngine = useTranslationStore.getState().engine;
+        if (!nextOptions.some((option) => option.value === currentEngine)) {
+          setEngine("openai");
+        }
+      } catch (error) {
+        console.error("Failed to load engines:", error);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [setEngine]);
 
   const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -128,6 +196,25 @@ export default function Toolbar() {
 
   const handleClear = () => {
     reset();
+  };
+
+  const handleCreateProvider = async () => {
+    setCreatingProvider(true);
+
+    try {
+      const created = await createEngine();
+      if (!created.ok || !created.id) {
+        return;
+      }
+
+      await refreshEngineOptions();
+      setEngine(created.id);
+      setShowConfig(true);
+    } catch (error) {
+      console.error("Failed to create provider:", error);
+    } finally {
+      setCreatingProvider(false);
+    }
   };
 
   const handleTranslate = async () => {
@@ -209,19 +296,30 @@ export default function Toolbar() {
                 <ProviderLogo
                   engineId={engine}
                   label={selectedEngine.label}
-                  logoUrl={selectedEngine.logoUrl}
+                  baseUrl={selectedEngine.baseUrl}
                 />
               }
               renderOptionLeading={(option: AppSelectOption) => (
                 <ProviderLogo
                   engineId={option.value}
                   label={option.label}
-                  logoUrl={option.logoUrl}
+                  baseUrl={option.baseUrl}
                 />
               )}
               width={engineSelectWidth}
               triggerClassName="px-3 py-2 text-sm font-semibold"
             />
+
+            <button
+              type="button"
+              onClick={handleCreateProvider}
+              disabled={creatingProvider}
+              className="grid h-8 w-11 place-items-center rounded-xl bg-white text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff] disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Add provider"
+              title="Add provider"
+            >
+              <PlusIcon className="h-4 w-4" strokeWidth={1.8} />
+            </button>
 
             <AppSelect
               value={targetLang}
@@ -284,6 +382,16 @@ export default function Toolbar() {
           engineId={engine}
           onClose={() => {
             setShowConfig(false);
+          }}
+          onSaved={() => {
+            setShowConfig(false);
+            void refreshEngineOptions();
+          }}
+          onDeleteProvider={(deletedId) => {
+            setShowConfig(false);
+            if (useTranslationStore.getState().engine === deletedId) {
+              setEngine("openai");
+            }
             void refreshEngineOptions();
           }}
         />
