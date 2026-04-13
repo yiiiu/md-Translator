@@ -7,16 +7,18 @@ if (!store.includes("rawInput: string")) {
 if (!store.includes("setRawInput")) {
   throw new Error("translation store must expose setRawInput");
 }
-if (!store.includes("reset: () => set(initialState)")) {
-  throw new Error("reset must clear rawInput through initialState");
+for (const expected of ["applyAppSettings", "defaultTargetLang", "autoTranslateDebounceMs"]) {
+  if (!store.includes(expected)) {
+    throw new Error(`translation store must include ${expected}`);
+  }
 }
 
 const toolbar = readFileSync("components/Toolbar.tsx", "utf8");
 const appHeader = readFileSync("components/AppHeader.tsx", "utf8");
-if (!toolbar.includes('aria-label="Upload .md"') || !toolbar.includes('aria-label="Clear"')) {
+if (!toolbar.includes("text.toolbar.upload") || !toolbar.includes("text.toolbar.clear")) {
   throw new Error("Toolbar must own accessible Upload .md and Clear actions");
 }
-if (!toolbar.includes("setRawInput(markdown)") || !toolbar.includes("reset()")) {
+if (!toolbar.includes("setRawInput(markdown)") || !toolbar.includes("onClick={reset}")) {
   throw new Error("Toolbar upload/clear must write rawInput and reset state");
 }
 if (!toolbar.includes("UploadIcon") || !toolbar.includes("ClearIcon")) {
@@ -57,7 +59,7 @@ if (splitView.includes("uppercase") || splitView.includes("README.MD")) {
 if (!splitView.includes("<textarea")) {
   throw new Error("SplitView must render the left raw markdown textarea");
 }
-if (!splitView.includes('placeholder="Paste Markdown here, or drag & drop a .md file..."')) {
+if (!splitView.includes("labels.placeholder")) {
   throw new Error("SplitView textarea must use the requested placeholder");
 }
 if (!splitView.includes("line-number-gutter") || !splitView.includes("leading-5")) {
@@ -66,8 +68,17 @@ if (!splitView.includes("line-number-gutter") || !splitView.includes("leading-5"
 if (!splitView.includes("syncMarkdown")) {
   throw new Error("SplitView must parse raw input through syncMarkdown");
 }
-if (!splitView.includes("startTranslation") || !splitView.includes("1500")) {
-  throw new Error("SplitView must debounce automatic translation");
+for (const expected of [
+  "startTranslation",
+  "autoTranslateEnabled",
+  "autoTranslateDebounceMs",
+]) {
+  if (!splitView.includes(expected)) {
+    throw new Error(`SplitView must include ${expected}`);
+  }
+}
+if (splitView.includes("1500")) {
+  throw new Error("SplitView must not hardcode the debounce delay");
 }
 if (!splitView.includes("ref={leftRef}") || !splitView.includes("onScroll={handleLeftScroll}")) {
   throw new Error("SplitView left pane must keep the scroll-sync ref and onScroll");
@@ -83,7 +94,7 @@ if (previewPane.includes("uppercase") || previewPane.includes("README.MD")) {
 if (!previewPane.includes("viewMode")) {
   throw new Error("PreviewPane must accept a viewMode prop");
 }
-if (!previewPane.includes("Preview") || !previewPane.includes("Code")) {
+if (!previewPane.includes("text.preview") || !previewPane.includes("text.code")) {
   throw new Error("PreviewPane must render the Preview/Code toggle");
 }
 if (!previewPane.includes('from "lucide-react"')) {
@@ -112,7 +123,7 @@ if (inputArea.includes("Parse")) {
 if (inputArea.includes("Upload") || inputArea.includes("Clear")) {
   throw new Error("InputArea must not render Upload or Clear actions");
 }
-if (!inputArea.includes("Drop .md anywhere")) {
+if (!inputArea.includes("hint")) {
   throw new Error("InputArea must keep the compact import hint");
 }
 

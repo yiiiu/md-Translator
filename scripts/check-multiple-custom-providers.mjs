@@ -48,19 +48,11 @@ if (!translate.includes('engineId.startsWith("custom-openai-")')) {
   throw new Error("createEngine must support dynamic custom provider ids");
 }
 
-const toolbar = readFileSync("components/Toolbar.tsx", "utf8");
-for (const expected of [
-  "google.com/s2/favicons",
-  "createEngine(",
-  "setEngine(created.id)",
-  "onDeleteProvider",
-]) {
-  if (!toolbar.includes(expected)) {
-    throw new Error(`Toolbar must include ${expected}`);
+const providerManager = readFileSync("components/ProviderSettingsManager.tsx", "utf8");
+for (const expected of ["createEngine(", "refreshEngineOptions", "onDeleteProvider"]) {
+  if (!providerManager.includes(expected)) {
+    throw new Error(`ProviderSettingsManager must include ${expected}`);
   }
-}
-if (toolbar.includes("logoUrl || deriveFaviconUrl")) {
-  throw new Error("Toolbar must not prioritize a manually saved logo_url over base_url favicon");
 }
 
 const engineConfig = readFileSync("components/EngineConfig.tsx", "utf8");

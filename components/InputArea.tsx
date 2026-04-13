@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getUiText } from "@/lib/ui-text";
 import { useTranslationStore } from "@/stores/translation";
 
 function isMarkdownFile(file: File) {
@@ -26,7 +27,8 @@ function readMarkdownFile(file: File, onRead: (markdown: string) => void) {
 }
 
 export default function InputArea() {
-  const { paragraphs, setRawInput } = useTranslationStore();
+  const { paragraphs, setRawInput, uiLanguage } = useTranslationStore();
+  const text = getUiText(uiLanguage).input;
   const dragDepthRef = useRef(0);
   const [draggingMarkdown, setDraggingMarkdown] = useState(false);
 
@@ -92,10 +94,10 @@ export default function InputArea() {
         <div className="pointer-events-none fixed inset-0 z-40 grid place-items-center bg-[#111c2d]/18 p-6 backdrop-blur-sm">
           <div className="rounded-3xl bg-white/90 px-10 py-8 text-center shadow-[0_32px_64px_rgba(17,28,45,0.18)] ring-1 ring-[#0052ff]/20">
             <p className="font-headline text-2xl font-extrabold tracking-tight text-[#003ec7]">
-              Drop Markdown to import
+              {text.dropTitle}
             </p>
             <p className="mt-2 text-sm font-medium text-[#434656]">
-              Supports .md, .markdown, and .txt files.
+              {text.dropDescription}
             </p>
           </div>
         </div>
@@ -107,16 +109,16 @@ export default function InputArea() {
             L
           </div>
           <div className="truncate text-[10px] font-bold text-[#737688]">
-            Drop .md anywhere · Ctrl+V paste
+            {text.hint}
           </div>
         </div>
 
         <div className="flex items-center justify-end gap-2">
           <span className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold tracking-[0.14em] text-[#434656] ring-1 ring-[#c3c5d9]/20">
-            {paragraphs.length} Buffers
+            {paragraphs.length} {text.buffers}
           </span>
           <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#003ec7]">
-            Active
+            {text.active}
           </span>
         </div>
       </footer>

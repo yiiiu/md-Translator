@@ -105,6 +105,14 @@ export interface GlossaryTermRequest {
   enabled?: boolean;
 }
 
+export interface AppSettingsResponse {
+  ui_language: "en" | "zh-CN";
+  default_target_lang: string;
+  auto_translate_enabled: boolean;
+  auto_translate_debounce_ms: number;
+  error?: string;
+}
+
 const RETRY_FAILED_CONCURRENCY = 4;
 
 export async function startTranslation(
@@ -404,4 +412,21 @@ export async function deleteGlossaryTerm(
   });
 
   return (await response.json()) as { ok?: boolean; error?: string };
+}
+
+export async function fetchAppSettings(): Promise<AppSettingsResponse> {
+  const response = await fetch("/api/settings");
+  return (await response.json()) as AppSettingsResponse;
+}
+
+export async function updateAppSettings(
+  payload: Partial<AppSettingsResponse>
+): Promise<AppSettingsResponse> {
+  const response = await fetch("/api/settings", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  return (await response.json()) as AppSettingsResponse;
 }

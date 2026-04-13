@@ -3,6 +3,7 @@
 import { Code2 as CodeIcon, Eye as EyeIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { RefObject, UIEvent, UIEventHandler } from "react";
+import { getUiText } from "@/lib/ui-text";
 import { type Paragraph, useTranslationStore } from "@/stores/translation";
 import ParagraphBlock from "./ParagraphBlock";
 
@@ -24,10 +25,13 @@ export default function PreviewPane({
   title,
   containerRef,
   onScroll,
-  emptyState = "Paste Markdown below, or upload a .md file to start.",
+  emptyState,
   viewMode = "preview",
 }: Props) {
-  const isTranslation = title.toLowerCase() === "translation";
+  const uiLanguage = useTranslationStore((state) => state.uiLanguage);
+  const text = getUiText(uiLanguage).splitView;
+  const isTranslation =
+    title === text.translation || title.toLowerCase() === "translation" || title === "译文";
   const updateParagraph = useTranslationStore((state) => state.updateParagraph);
   const codeLineNumberRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState(viewMode);
@@ -36,6 +40,7 @@ export default function PreviewPane({
     .join("\n\n");
   const [codeDraft, setCodeDraft] = useState(outputMarkdown);
   const codeLineCount = Math.max(1, codeDraft.split("\n").length);
+  const nextEmptyState = emptyState || text.empty;
 
   useEffect(() => {
     setMode(viewMode);
@@ -104,7 +109,7 @@ export default function PreviewPane({
                   }`}
                 >
                   <EyeIcon className="h-3 w-3" strokeWidth={1.8} />
-                  Preview
+                  {text.preview}
                 </button>
                 <button
                   type="button"
@@ -116,7 +121,7 @@ export default function PreviewPane({
                   }`}
                 >
                   <CodeIcon className="h-3 w-3" strokeWidth={1.8} />
-                  Code
+                  {text.code}
                 </button>
               </div>
               <button
@@ -124,23 +129,23 @@ export default function PreviewPane({
                 onClick={handleCopy}
                 disabled={!outputMarkdown}
                 className="rounded-full px-2 py-1 text-xs font-bold text-[#737688] transition hover:bg-[#dee8ff] hover:text-[#003ec7] disabled:cursor-not-allowed disabled:opacity-45"
-                aria-label="Copy translation"
+                aria-label={text.copy}
               >
-                Copy
+                {text.copy}
               </button>
               <button
                 type="button"
                 onClick={handleDownload}
                 disabled={!outputMarkdown}
                 className="rounded-full px-2 py-1 text-xs font-bold text-[#737688] transition hover:bg-[#dee8ff] hover:text-[#003ec7] disabled:cursor-not-allowed disabled:opacity-45"
-                aria-label="Download translation"
+                aria-label={text.save}
               >
-                Save
+                {text.save}
               </button>
             </>
           ) : (
             <span className="rounded-md bg-white px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-[#737688] ring-1 ring-[#c3c5d9]/20">
-              Readme.md
+              {text.fileName}
             </span>
           )}
         </div>
@@ -168,13 +173,13 @@ export default function PreviewPane({
               value={codeDraft}
               onChange={(event) => handleCodeChange(event.target.value)}
               onScroll={handleCodeScroll}
-              placeholder={emptyState}
+              placeholder={nextEmptyState}
               className="custom-scrollbar min-h-0 flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3 font-mono text-xs leading-5 text-[#111c2d] outline-none placeholder:text-[#b0b3c8]"
             />
           </div>
         ) : paragraphs.length === 0 ? (
           <div className="grid min-h-full flex-1 place-items-center px-8 py-16 text-center text-sm text-[#737688]">
-            {emptyState}
+            {nextEmptyState}
           </div>
         ) : (
           <div className="min-w-0 flex-1 py-3">

@@ -23,8 +23,8 @@ const appHeader = readFileSync(appHeaderPath, "utf8");
 for (const expected of [
   '"use client"',
   "usePathname",
-  'href: "/glossary"',
   'href: "/history"',
+  'href: "/settings"',
   'pathname === "/"',
   "rounded-lg",
   "bottom-0",
@@ -35,8 +35,8 @@ for (const expected of [
 }
 
 const homePage = readFileSync("app/page.tsx", "utf8");
-if (!homePage.includes("<AppHeader")) {
-  throw new Error("Home page must render the shared AppHeader");
+if (!homePage.includes("HomeWorkspace")) {
+  throw new Error("Home page must render the shared HomeWorkspace shell");
 }
 
 const toolbar = readFileSync("components/Toolbar.tsx", "utf8");
@@ -75,14 +75,14 @@ if (!existsSync(glossaryPagePath) || !existsSync(historyPagePath)) {
 }
 
 const glossaryPage = readFileSync(glossaryPagePath, "utf8");
-for (const expected of ["<AppHeader", "GlossaryManager", "listGlossaryTerms"]) {
+for (const expected of ['redirect("/settings?tab=glossary")']) {
   if (!glossaryPage.includes(expected)) {
     throw new Error(`Glossary page must include ${expected}`);
   }
 }
 
 const historyPage = readFileSync(historyPagePath, "utf8");
-for (const expected of ["<AppHeader", "listTasks", "Translation History", "searchParams"]) {
+for (const expected of ["<AppHeader", "listTasks", "searchParams", "getAppSettings"]) {
   if (!historyPage.includes(expected)) {
     throw new Error(`History page must include ${expected}`);
   }

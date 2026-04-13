@@ -1,6 +1,11 @@
 import fs from "fs";
 import Database from "better-sqlite3";
 import path from "path";
+import {
+  DEFAULT_APP_SETTINGS,
+  normalizeAppSettings,
+  type AppSettings,
+} from "./app-settings";
 
 const DB_PATH = path.join(process.cwd(), "data", "md-translator.db");
 
@@ -67,7 +72,34 @@ function createTables(db: Database.Database) {
       created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS app_settings (
+      id                          INTEGER PRIMARY KEY CHECK (id = 1),
+      ui_language                 TEXT NOT NULL DEFAULT 'en',
+      default_target_lang         TEXT NOT NULL DEFAULT 'zh-CN',
+      auto_translate_enabled      INTEGER NOT NULL DEFAULT 1,
+      auto_translate_debounce_ms  INTEGER NOT NULL DEFAULT 1500,
+      created_at                  DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at                  DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
+
+  db.prepare(
+    `INSERT INTO app_settings (
+      id,
+      ui_language,
+      default_target_lang,
+      auto_translate_enabled,
+      auto_translate_debounce_ms
+    )
+    VALUES (1, ?, ?, ?, ?)
+    ON CONFLICT(id) DO NOTHING`
+  ).run(
+    DEFAULT_APP_SETTINGS.ui_language,
+    DEFAULT_APP_SETTINGS.default_target_lang,
+    DEFAULT_APP_SETTINGS.auto_translate_enabled ? 1 : 0,
+    DEFAULT_APP_SETTINGS.auto_translate_debounce_ms
+  );
 }
 
 // --- engine_configs ---
@@ -383,4 +415,72 @@ export function updateGlossaryTerm(
 
 export function deleteGlossaryTerm(id: number): void {
   getDb().prepare("DELETE FROM glossary_terms WHERE id = ?").run(id);
+}
+
+// --- app_settings ---
+
+interface AppSettingsRow {
+  ui_language: string;
+  default_target_lang: string;
+  auto_translate_enabled: number;
+  auto_translate_debounce_ms: number;
+}
+
+function normalizeAppSettingsRow(row: AppSettingsRow | undefined): AppSettings {
+  return normalizeAppSettings(
+    row
+      ? {
+          ui_language: row.ui_language === "zh-CN" ? "zh-CN" : "en",
+          default_target_lang: row.default_target_lang,
+          auto_translate_enabled: Boolean(row.auto_translate_enabled),
+          auto_translate_debounce_ms: row.auto_translate_debounce_ms,
+        }
+      : DEFAULT_APP_SETTINGS
+  );
+}
+
+export function getAppSettings(): AppSettings {
+  const row = getDb()
+    .prepare(
+      `SELECT ui_language, default_target_lang, auto_translate_enabled, auto_translate_debounce_ms
+       FROM app_settings
+       WHERE id = 1`
+    )
+    .get() as AppSettingsRow | undefined;
+
+  return normalizeAppSettingsRow(row);
+}
+
+export function upsertAppSettings(input: Partial<AppSettings>): AppSettings {
+  const current = getAppSettings();
+  const nextSettings = normalizeAppSettings({
+    ...current,
+    ...input,
+  });
+
+  getDb()
+    .prepare(
+      `INSERT INTO app_settings (
+        id,
+        ui_language,
+        default_target_lang,
+        auto_translate_enabled,
+        auto_translate_debounce_ms
+      )
+      VALUES (1, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        ui_language = excluded.ui_language,
+        default_target_lang = excluded.default_target_lang,
+        auto_translate_enabled = excluded.auto_translate_enabled,
+        auto_translate_debounce_ms = excluded.auto_translate_debounce_ms,
+        updated_at = CURRENT_TIMESTAMP`
+    )
+    .run(
+      nextSettings.ui_language,
+      nextSettings.default_target_lang,
+      nextSettings.auto_translate_enabled ? 1 : 0,
+      nextSettings.auto_translate_debounce_ms
+    );
+
+  return nextSettings;
 }

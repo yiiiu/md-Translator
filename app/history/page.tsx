@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AppHeader from "@/components/AppHeader";
-import { listTasks } from "@/lib/db";
+import { getAppSettings, listTasks } from "@/lib/db";
+import { getUiText } from "@/lib/ui-text";
 
 function normalizeStatusFilter(value: string | undefined) {
   if (value && ["all", "completed", "in-progress", "issues"].includes(value)) {
@@ -80,6 +81,8 @@ export default async function HistoryPage({
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
   const params = await searchParams;
+  const settings = getAppSettings();
+  const text = getUiText(settings.ui_language).history;
   const q = normalizeQuery(params.q);
   const statusFilter = normalizeStatusFilter(params.status);
   const tasks = listTasks({ q });
@@ -105,21 +108,20 @@ export default async function HistoryPage({
 
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-[#f9f9ff] text-[#111c2d]">
-      <AppHeader />
+      <AppHeader uiLanguage={settings.ui_language} />
       <div className="flex-1 overflow-y-auto bg-[#f0f3ff] px-4 py-4 lg:px-8 lg:py-6">
         <div className="mx-auto flex max-w-7xl flex-col gap-8">
           <section className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-3">
               <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
-                {items.length} visible tasks
+                {items.length} {text.visibleTasks}
               </span>
               <div>
                 <h2 className="font-headline text-4xl font-extrabold tracking-tight text-[#111c2d]">
-                  Translation History
+                  {text.title}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm text-[#434656] lg:text-base">
-                  Monitor real translation runs stored in the local task history and
-                  inspect engine, language, timing, and processing outcomes.
+                  {text.description}
                 </p>
               </div>
             </div>
@@ -132,14 +134,14 @@ export default async function HistoryPage({
                 type="text"
                 name="q"
                 defaultValue={q}
-                placeholder="Search by task id, engine, or language..."
+                placeholder={text.search}
                 className="w-full rounded-xl bg-white px-4 py-3 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/20"
               />
               <button
                 type="submit"
                 className="rounded-xl bg-white px-4 py-3 text-sm font-bold text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff]"
               >
-                Search
+                {text.searchButton}
               </button>
             </form>
           </section>
@@ -147,7 +149,7 @@ export default async function HistoryPage({
           <section className="grid gap-4 md:grid-cols-3">
             <div className="rounded-[1.25rem] bg-white p-6 shadow-[0_24px_48px_rgba(17,28,45,0.06)]">
               <p className="text-[11px] font-extrabold tracking-[0.22em] text-[#737688] uppercase">
-                Total Tasks
+                {text.totalTasks}
               </p>
               <p className="font-headline mt-2 text-3xl font-extrabold text-[#111c2d]">
                 {totalTasks}
@@ -155,7 +157,7 @@ export default async function HistoryPage({
             </div>
             <div className="rounded-[1.25rem] bg-white p-6 shadow-[0_24px_48px_rgba(17,28,45,0.06)]">
               <p className="text-[11px] font-extrabold tracking-[0.22em] text-[#737688] uppercase">
-                Completed
+                {text.completed}
               </p>
               <p className="font-headline mt-2 text-3xl font-extrabold text-[#111c2d]">
                 {completedTasks}
@@ -163,7 +165,7 @@ export default async function HistoryPage({
             </div>
             <div className="rounded-[1.25rem] bg-white p-6 shadow-[0_24px_48px_rgba(17,28,45,0.06)]">
               <p className="text-[11px] font-extrabold tracking-[0.22em] text-[#737688] uppercase">
-                Success Rate
+                {text.successRate}
               </p>
               <p className="font-headline mt-2 text-3xl font-extrabold text-[#111c2d]">
                 {successRate}%
@@ -174,10 +176,10 @@ export default async function HistoryPage({
           <section className="rounded-[1.25rem] bg-white p-4 shadow-[0_24px_48px_rgba(17,28,45,0.06)]">
             <div className="flex flex-wrap items-center gap-2">
               {[
-                { value: "all", label: "All" },
-                { value: "completed", label: "Completed" },
-                { value: "in-progress", label: "In Progress" },
-                { value: "issues", label: `Issues (${issueTasks})` },
+                { value: "all", label: text.all },
+                { value: "completed", label: text.completed },
+                { value: "in-progress", label: text.inProgress },
+                { value: "issues", label: `${text.issues} (${issueTasks})` },
               ].map((filter) => {
                 const active = statusFilter === filter.value;
                 return (
@@ -198,35 +200,35 @@ export default async function HistoryPage({
 
             <div className="mt-4 overflow-x-auto">
               <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="bg-[#f0f3ff]/70 text-[#434656]">
-                    <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
-                      Task
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
-                      Target Language
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
-                      Engine
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
-                      Created
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
-                      Progress
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
+              <thead>
+                <tr className="bg-[#f0f3ff]/70 text-[#434656]">
+                  <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
+                      {text.task}
+                  </th>
+                  <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
+                      {text.targetLanguage}
+                  </th>
+                  <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
+                      {text.engine}
+                  </th>
+                  <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
+                      {text.created}
+                  </th>
+                  <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
+                      {text.progress}
+                  </th>
+                  <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
+                      {text.status}
+                  </th>
+                </tr>
+              </thead>
                 <tbody className="divide-y divide-[#c3c5d9]/15">
                   {items.map((task) => (
                     <tr key={task.id} className="transition hover:bg-[#f0f3ff]/35">
                       <td className="px-6 py-5">
                         <div className="space-y-1">
                           <p className="font-semibold text-[#111c2d]">
-                            Task {task.id.slice(0, 8)}
+                            {text.task} {task.id.slice(0, 8)}
                           </p>
                           <p className="text-xs text-[#737688]">{task.id}</p>
                         </div>
@@ -254,10 +256,10 @@ export default async function HistoryPage({
                           }
                         >
                           {task.displayStatus === "in-progress"
-                            ? "In Progress"
+                            ? text.inProgress
                             : task.displayStatus === "issues"
-                              ? "Issues"
-                              : "Completed"}
+                              ? text.issues
+                              : text.completed}
                         </span>
                       </td>
                     </tr>
@@ -269,10 +271,10 @@ export default async function HistoryPage({
             {items.length === 0 ? (
               <div className="mt-6 rounded-2xl bg-[#f0f3ff] px-6 py-10 text-center">
                 <p className="font-headline text-xl font-extrabold text-[#111c2d]">
-                  No history results found
+                  {text.noResultsTitle}
                 </p>
                 <p className="mt-2 text-sm text-[#57657a]">
-                  Adjust the current search or status filter to inspect other tasks.
+                  {text.noResultsDescription}
                 </p>
               </div>
             ) : null}

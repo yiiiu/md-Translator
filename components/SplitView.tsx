@@ -27,8 +27,16 @@ function formatLineNumber(index: number) {
 }
 
 export default function SplitView() {
-  const { paragraphs, rawInput, setRawInput, setParagraphs, reset } =
-    useTranslationStore();
+  const {
+    paragraphs,
+    rawInput,
+    setRawInput,
+    setParagraphs,
+    reset,
+    autoTranslateEnabled,
+    autoTranslateDebounceMs,
+    uiLanguage,
+  } = useTranslationStore();
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const leftLineNumberRef = useRef<HTMLDivElement>(null);
@@ -37,6 +45,22 @@ export default function SplitView() {
   const mountedRef = useRef(false);
   const { handleLeftScroll, handleRightScroll } = useScrollSync(leftRef, rightRef);
   const lineCount = Math.max(1, rawInput.split("\n").length);
+  const labels =
+    uiLanguage === "zh-CN"
+      ? {
+          original: "原文",
+          translation: "译文",
+          fileName: "Readme.md",
+          placeholder: "在这里粘贴 Markdown，或拖拽一个 .md 文件...",
+          empty: "在下方粘贴 Markdown，或上传一个 .md 文件开始。",
+        }
+      : {
+          original: "Original",
+          translation: "Translation",
+          fileName: "Readme.md",
+          placeholder: "Paste Markdown here, or drag & drop a .md file...",
+          empty: "Paste Markdown below, or upload a .md file to start.",
+        };
 
   const clearAutoTranslateTimer = useCallback(() => {
     if (autoTranslateTimerRef.current) {
@@ -45,23 +69,30 @@ export default function SplitView() {
     }
   }, []);
 
-  const scheduleAutoTranslate = useCallback((markdown: string) => {
-    clearAutoTranslateTimer();
+  const scheduleAutoTranslate = useCallback(
+    (markdown: string) => {
+      clearAutoTranslateTimer();
 
-    autoTranslateTimerRef.current = setTimeout(() => {
-      const current = useTranslationStore.getState();
-      if (current.rawInput !== markdown || current.paragraphs.length === 0) return;
+      if (!autoTranslateEnabled) {
+        return;
+      }
 
-      void startTranslation(
-        current.paragraphs,
-        current.engine,
-        current.targetLang,
-        current.mode
-      ).catch(() => {
-        // Manual Translate remains available if the background request fails.
-      });
-    }, 1500);
-  }, [clearAutoTranslateTimer]);
+      autoTranslateTimerRef.current = setTimeout(() => {
+        const current = useTranslationStore.getState();
+        if (current.rawInput !== markdown || current.paragraphs.length === 0) return;
+
+        void startTranslation(
+          current.paragraphs,
+          current.engine,
+          current.targetLang,
+          current.mode
+        ).catch(() => {
+          // Manual Translate remains available if the background request fails.
+        });
+      }, autoTranslateDebounceMs);
+    },
+    [autoTranslateDebounceMs, autoTranslateEnabled, clearAutoTranslateTimer]
+  );
 
   const syncMarkdown = useCallback(
     (markdown: string, options: { writeInput?: boolean } = {}) => {
@@ -133,10 +164,10 @@ export default function SplitView() {
       <section className="flex min-h-0 flex-col gap-3">
         <div className="flex items-center justify-between px-2">
           <span className="text-[10px] font-extrabold tracking-[0.24em] text-[#434656]">
-            Original
+            {labels.original}
           </span>
           <span className="rounded-md bg-white px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-[#737688] ring-1 ring-[#c3c5d9]/20">
-            Readme.md
+            {labels.fileName}
           </span>
         </div>
 
@@ -160,7 +191,7 @@ export default function SplitView() {
             onScroll={handleTextareaScroll}
             onDragOver={(event) => event.preventDefault()}
             onDrop={handleDrop}
-            placeholder="Paste Markdown here, or drag & drop a .md file..."
+            placeholder={labels.placeholder}
             className="custom-scrollbar h-full min-h-0 w-full flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3 font-mono text-sm leading-5 text-[#111c2d] outline-none placeholder:text-[#b0b3c8]"
           />
         </div>
@@ -168,7 +199,8 @@ export default function SplitView() {
 
       <PreviewPane
         paragraphs={paragraphs}
-        title="Translation"
+        title={labels.translation}
+        emptyState={labels.empty}
         containerRef={rightRef}
         onScroll={handleRightScroll}
         viewMode="preview"

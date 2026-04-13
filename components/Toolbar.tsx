@@ -2,108 +2,33 @@
 
 import {
   Eraser as ClearIcon,
-  Plus as PlusIcon,
   Upload as UploadIcon,
 } from "lucide-react";
-import { SiOpenai } from "react-icons/si";
 import { useEffect, useState, type ChangeEvent } from "react";
-import { createEngine, fetchEngines, startTranslation } from "@/services/api";
+import type { UiLanguage } from "@/lib/app-settings";
+import { getTargetLanguageOptions, getUiText } from "@/lib/ui-text";
+import { fetchEngines, startTranslation } from "@/services/api";
 import { useTranslationStore } from "@/stores/translation";
-import EngineConfig from "./EngineConfig";
+import ProviderLogo from "./ProviderLogo";
 import AppSelect, { type AppSelectOption } from "./ui/AppSelect";
-
-const TARGET_LANGUAGES = [
-  { value: "zh-CN", label: "Chinese (Cn)" },
-  { value: "zh-TW", label: "Chinese (Tw)" },
-  { value: "ja", label: "Japanese" },
-  { value: "ko", label: "Korean" },
-];
 
 const DEFAULT_ENGINE_OPTIONS = [
   {
     value: "openai",
-    label: "Openai",
+    label: "OpenAI",
     baseUrl: "https://api.openai.com/v1",
     builtin: true,
   },
 ];
-
-function deriveFaviconUrl(baseUrl?: string) {
-  if (!baseUrl) {
-    return "";
-  }
-
-  try {
-    const host = new URL(baseUrl).hostname;
-    if (!host) {
-      return "";
-    }
-
-    return `https://www.google.com/s2/favicons?domain=${host}&sz=64`;
-  } catch {
-    return "";
-  }
-}
 
 function isMarkdownFile(file: File) {
   const name = file.name.toLowerCase();
   return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".txt");
 }
 
-function ProviderLogo({
-  engineId,
-  label,
-  baseUrl,
-}: {
-  engineId: string;
-  label: string;
-  baseUrl?: string;
-}) {
-  const [failedImageUrl, setFailedImageUrl] = useState("");
-  const normalized = `${engineId} ${label}`.toLowerCase();
-  const isOpenAI = engineId === "openai";
-  const imageUrl = deriveFaviconUrl(baseUrl);
-  const shouldShowImage = Boolean(imageUrl) && failedImageUrl !== imageUrl;
-  const mark = normalized.includes("custom")
-    ? "C"
-    : label.trim().charAt(0).toUpperCase() || "A";
-
-  return (
-    <span
-      aria-label={`${label} provider`}
-      className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#111c2d] text-[10px] font-extrabold tracking-[-0.02em] text-white shadow-sm ring-1 ring-[#0052ff]/20"
-    >
-      {shouldShowImage ? (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            alt=""
-            src={imageUrl}
-            aria-hidden="true"
-            className="h-4 w-4 rounded-sm object-contain"
-            onError={() => setFailedImageUrl(imageUrl)}
-          />
-        </>
-      ) : isOpenAI ? (
-        <SiOpenai className="h-3.5 w-3.5" title="" />
-      ) : (
-        mark
-      )}
-    </span>
-  );
-}
-
-interface ToolbarProps {
-  showConfig: boolean;
-  onOpenConfig: () => void;
-  onCloseConfig: () => void;
-}
-
-export default function Toolbar({
-  showConfig,
-  onOpenConfig,
-  onCloseConfig,
-}: ToolbarProps) {
+export default function Toolbar({ uiLanguage }: { uiLanguage: UiLanguage }) {
+  const text = getUiText(uiLanguage);
+  const targetLanguageOptions = getTargetLanguageOptions(uiLanguage);
   const {
     engine,
     targetLang,
@@ -115,7 +40,6 @@ export default function Toolbar({
     reset,
   } = useTranslationStore();
   const [translating, setTranslating] = useState(false);
-  const [creatingProvider, setCreatingProvider] = useState(false);
   const [engineOptions, setEngineOptions] = useState(DEFAULT_ENGINE_OPTIONS);
 
   const canTranslate = paragraphs.length > 0 && !translating;
@@ -125,30 +49,6 @@ export default function Toolbar({
     Math.max(selectedEngine.label.length + 2, 10),
     30
   )}ch`;
-
-  const refreshEngineOptions = async () => {
-    try {
-      const data = await fetchEngines();
-      const nextOptions =
-        data.engines?.map((item) => ({
-          value: item.id,
-          label: item.name,
-          baseUrl: item.base_url || "",
-          builtin: item.builtin ?? item.id === "openai",
-        })) || DEFAULT_ENGINE_OPTIONS;
-
-      setEngineOptions(nextOptions);
-
-      const currentEngine = useTranslationStore.getState().engine;
-      if (!nextOptions.some((option) => option.value === currentEngine)) {
-        setEngine("openai");
-      }
-
-      return nextOptions;
-    } catch (error) {
-      console.error("Failed to load engines:", error);
-    }
-  };
 
   useEffect(() => {
     let active = true;
@@ -201,29 +101,6 @@ export default function Toolbar({
     event.target.value = "";
   };
 
-  const handleClear = () => {
-    reset();
-  };
-
-  const handleCreateProvider = async () => {
-    setCreatingProvider(true);
-
-    try {
-      const created = await createEngine();
-      if (!created.ok || !created.id) {
-        return;
-      }
-
-      await refreshEngineOptions();
-      setEngine(created.id);
-      onOpenConfig();
-    } catch (error) {
-      console.error("Failed to create provider:", error);
-    } finally {
-      setCreatingProvider(false);
-    }
-  };
-
   const handleTranslate = async () => {
     if (!canTranslate) return;
 
@@ -252,117 +129,84 @@ export default function Toolbar({
   };
 
   return (
-    <>
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f0f3ff] px-4 py-3 lg:px-8">
-        <div className="flex flex-wrap items-center gap-3">
-          <AppSelect
-            value={engine}
-            onValueChange={setEngine}
-            options={engineOptions}
-            ariaLabel="Translation engine"
-            leading={
-              <ProviderLogo
-                engineId={engine}
-                label={selectedEngine.label}
-                baseUrl={selectedEngine.baseUrl}
-              />
-            }
-            renderOptionLeading={(option: AppSelectOption) => (
-              <ProviderLogo
-                engineId={option.value}
-                label={option.label}
-                baseUrl={option.baseUrl}
-              />
-            )}
-            width={engineSelectWidth}
-            triggerClassName="px-3 py-2 text-sm font-semibold"
-          />
-
-          <button
-            type="button"
-            onClick={handleCreateProvider}
-            disabled={creatingProvider}
-            className="grid h-8 w-11 place-items-center rounded-xl bg-white text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff] disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label="Add provider"
-            title="Add provider"
-          >
-            <PlusIcon className="h-4 w-4" strokeWidth={1.8} />
-          </button>
-
-          <AppSelect
-            value={targetLang}
-            onValueChange={setTargetLang}
-            options={TARGET_LANGUAGES}
-            ariaLabel="Target language"
-            prefix={
-              <>
-                <span className="rounded-lg bg-[#d5e3fc] px-3 py-1.5 text-[#003ec7]">
-                  Auto
-                </span>
-                <span className="text-[#737688]">to</span>
-              </>
-            }
-            triggerClassName="p-1 text-xs font-extrabold tracking-[0.18em] text-[#003ec7]"
-          />
-
-          <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
-            {paragraphs.length} paragraphs
-          </span>
-
-          <label
-            className="grid h-8 w-11 cursor-pointer place-items-center rounded-xl bg-[#0052ff] text-white shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#003ec7]"
-            aria-label="Upload .md"
-            title="Upload .md"
-          >
-            <UploadIcon className="h-4 w-4" strokeWidth={1.8} />
-            <input
-              type="file"
-              accept=".md,.markdown,.txt"
-              onChange={handleFileUpload}
-              className="hidden"
+    <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f0f3ff] px-4 py-3 lg:px-8">
+      <div className="flex flex-wrap items-center gap-3">
+        <AppSelect
+          value={engine}
+          onValueChange={setEngine}
+          options={engineOptions}
+          ariaLabel="Translation engine"
+          leading={
+            <ProviderLogo
+              engineId={engine}
+              label={selectedEngine.label}
+              baseUrl={selectedEngine.baseUrl}
             />
-          </label>
+          }
+          renderOptionLeading={(option: AppSelectOption) => (
+            <ProviderLogo
+              engineId={option.value}
+              label={option.label}
+              baseUrl={option.baseUrl}
+            />
+          )}
+          width={engineSelectWidth}
+          triggerClassName="px-3 py-2 text-sm font-semibold"
+        />
 
-          <button
-            type="button"
-            onClick={handleClear}
-            className="grid h-8 w-11 place-items-center rounded-xl bg-white text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff]"
-            aria-label="Clear"
-            title="Clear"
-          >
-            <ClearIcon className="h-4 w-4" strokeWidth={1.8} />
-          </button>
-        </div>
+        <AppSelect
+          value={targetLang}
+          onValueChange={setTargetLang}
+          options={targetLanguageOptions}
+          ariaLabel="Target language"
+          prefix={
+            <>
+              <span className="rounded-lg bg-[#d5e3fc] px-3 py-1.5 text-[#003ec7]">
+                {text.toolbar.auto}
+              </span>
+              <span className="text-[#737688]">{text.toolbar.to}</span>
+            </>
+          }
+          triggerClassName="p-1 text-xs font-extrabold tracking-[0.18em] text-[#003ec7]"
+        />
+
+        <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
+          {paragraphs.length} {text.toolbar.paragraphs}
+        </span>
+
+        <label
+          className="grid h-8 w-11 cursor-pointer place-items-center rounded-xl bg-[#0052ff] text-white shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#003ec7]"
+          aria-label={text.toolbar.upload}
+          title={text.toolbar.upload}
+        >
+          <UploadIcon className="h-4 w-4" strokeWidth={1.8} />
+          <input
+            type="file"
+            accept=".md,.markdown,.txt"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+        </label>
 
         <button
           type="button"
-          onClick={handleTranslate}
-          disabled={!canTranslate}
-          className="rounded-full bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-7 py-2.5 text-sm font-bold text-white shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
+          onClick={reset}
+          className="grid h-8 w-11 place-items-center rounded-xl bg-white text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff]"
+          aria-label={text.toolbar.clear}
+          title={text.toolbar.clear}
         >
-          {translating ? "Translating..." : "Translate"}
+          <ClearIcon className="h-4 w-4" strokeWidth={1.8} />
         </button>
       </div>
 
-      {showConfig ? (
-        <EngineConfig
-          engineId={engine}
-          onClose={() => {
-            onCloseConfig();
-          }}
-          onSaved={() => {
-            onCloseConfig();
-            void refreshEngineOptions();
-          }}
-          onDeleteProvider={(deletedId) => {
-            onCloseConfig();
-            if (useTranslationStore.getState().engine === deletedId) {
-              setEngine("openai");
-            }
-            void refreshEngineOptions();
-          }}
-        />
-      ) : null}
-    </>
+      <button
+        type="button"
+        onClick={handleTranslate}
+        disabled={!canTranslate}
+        className="rounded-full bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-7 py-2.5 text-sm font-bold text-white shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
+      >
+        {translating ? text.toolbar.translating : text.toolbar.translate}
+      </button>
+    </div>
   );
 }

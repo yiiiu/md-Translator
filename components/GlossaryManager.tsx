@@ -9,6 +9,8 @@ import {
   Trash2 as DeleteIcon,
 } from "lucide-react";
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
+import type { UiLanguage } from "@/lib/app-settings";
+import { formatUiText, getUiText } from "@/lib/ui-text";
 import {
   createGlossaryTerm,
   deleteGlossaryTerm,
@@ -17,11 +19,16 @@ import {
   type GlossaryTermResponse,
   updateGlossaryTerm,
 } from "@/services/api";
+import ConfirmDialog from "./ui/ConfirmDialog";
+import AppSelect, { type AppSelectOption } from "./ui/AppSelect";
 
 type GlossaryManagerProps = {
   initialTerms: GlossaryTermResponse[];
   initialSourceLanguages: string[];
   initialTargetLanguages: string[];
+  embedded?: boolean;
+  showHeader?: boolean;
+  uiLanguage?: UiLanguage;
 };
 
 type GlossaryFormState = GlossaryTermRequest & {
@@ -37,6 +44,9 @@ const EMPTY_FORM: GlossaryFormState = {
   enabled: true,
 };
 
+const ALL_SOURCE_LANG_VALUE = "__all_source_lang__";
+const ALL_TARGET_LANG_VALUE = "__all_target_lang__";
+
 async function loadGlossaryData(filters: {
   q?: string;
   enabled?: string;
@@ -50,7 +60,11 @@ export default function GlossaryManager({
   initialTerms,
   initialSourceLanguages,
   initialTargetLanguages,
+  embedded = false,
+  showHeader = true,
+  uiLanguage = "en",
 }: GlossaryManagerProps) {
+  const glossaryText = getUiText(uiLanguage).glossary;
   const [terms, setTerms] = useState(initialTerms);
   const [sourceLanguages, setSourceLanguages] = useState(initialSourceLanguages);
   const [targetLanguages, setTargetLanguages] = useState(initialTargetLanguages);
@@ -64,8 +78,27 @@ export default function GlossaryManager({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [confirmDeleteTerm, setConfirmDeleteTerm] =
+    useState<GlossaryTermResponse | null>(null);
 
   const deferredQuery = useDeferredValue(query);
+  const sourceLanguageOptions: AppSelectOption[] = [
+    { value: ALL_SOURCE_LANG_VALUE, label: glossaryText.allSourceLangs },
+    ...sourceLanguages.map((language) => ({
+      value: language,
+      label: language,
+    })),
+  ];
+  const targetLanguageOptions: AppSelectOption[] = [
+    { value: ALL_TARGET_LANG_VALUE, label: glossaryText.allTargetLangs },
+    ...targetLanguages.map((language) => ({
+      value: language,
+      label: language,
+    })),
+  ];
+  const dialogCancelLabel = uiLanguage === "zh-CN" ? "取消" : "Cancel";
+  const glossaryDeleteTitle =
+    uiLanguage === "zh-CN" ? "删除术语" : "Delete glossary term";
 
   useEffect(() => {
     let active = true;
@@ -94,7 +127,7 @@ export default function GlossaryManager({
         }
 
         setErrorMessage(
-          error instanceof Error ? error.message : "Failed to load glossary terms"
+          error instanceof Error ? error.message : glossaryText.saveFailed
         );
       })
       .finally(() => {
@@ -108,7 +141,13 @@ export default function GlossaryManager({
     return () => {
       active = false;
     };
-  }, [deferredQuery, enabledFilter, sourceLangFilter, targetLangFilter]);
+  }, [
+    deferredQuery,
+    enabledFilter,
+    glossaryText.saveFailed,
+    sourceLangFilter,
+    targetLangFilter,
+  ]);
 
   const refreshTerms = async () => {
     setLoading(true);
@@ -127,7 +166,7 @@ export default function GlossaryManager({
       setTargetLanguages(data.target_languages || []);
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Failed to load glossary terms"
+        error instanceof Error ? error.message : glossaryText.saveFailed
       );
     } finally {
       setLoading(false);
@@ -157,12 +196,12 @@ export default function GlossaryManager({
 
   const handleSubmit = async () => {
     if (!formState.source_term.trim() || !formState.target_term.trim()) {
-      setErrorMessage("Source and translated terms are required");
+      setErrorMessage(glossaryText.requiredTerms);
       return;
     }
 
     if (!formState.source_lang.trim() || !formState.target_lang.trim()) {
-      setErrorMessage("Source and target languages are required");
+      setErrorMessage(glossaryText.requiredLangs);
       return;
     }
 
@@ -184,31 +223,38 @@ export default function GlossaryManager({
         : await createGlossaryTerm(payload);
 
       if (!result.ok) {
-        setErrorMessage(result.error || "Failed to save glossary term");
+        setErrorMessage(result.error || glossaryText.saveFailed);
         return;
       }
 
       setShowDialog(false);
       await refreshTerms();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to save glossary term");
+      setErrorMessage(
+        error instanceof Error ? error.message : glossaryText.saveFailed
+      );
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (term: GlossaryTermResponse) => {
-    if (!window.confirm(`Delete glossary term "${term.source_term}"?`)) {
+    setConfirmDeleteTerm(term);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDeleteTerm) {
       return;
     }
 
     setErrorMessage(null);
-    const result = await deleteGlossaryTerm(term.id);
+    const result = await deleteGlossaryTerm(confirmDeleteTerm.id);
     if (!result.ok) {
-      setErrorMessage(result.error || "Failed to delete glossary term");
+      setErrorMessage(result.error || glossaryText.deleteFailed);
       return;
     }
 
+    setConfirmDeleteTerm(null);
     await refreshTerms();
   };
 
@@ -219,7 +265,7 @@ export default function GlossaryManager({
     });
 
     if (!result.ok) {
-      setErrorMessage(result.error || "Failed to update glossary status");
+      setErrorMessage(result.error || glossaryText.toggleFailed);
       return;
     }
 
@@ -229,21 +275,32 @@ export default function GlossaryManager({
   return (
     <>
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <div className="space-y-3">
-            <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
-              {terms.length} terms
-            </span>
-            <div>
-              <h2 className="font-headline text-4xl font-extrabold tracking-tight text-[#111c2d]">
-                Glossary
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm text-[#434656] lg:text-base">
-                Manage real translation terminology from your local database. Enabled
-                terms act as your project-level source of truth.
-              </p>
+        <div
+          className={`flex flex-col justify-between gap-6 ${
+            showHeader ? "lg:flex-row lg:items-end" : "lg:flex-row lg:items-center"
+          }`}
+        >
+          {showHeader ? (
+            <div className="space-y-3">
+              <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
+                {terms.length} {glossaryText.tag}
+              </span>
+              <div>
+                <h2 className="font-headline text-4xl font-extrabold tracking-tight text-[#111c2d]">
+                  {embedded ? glossaryText.embeddedTitle : glossaryText.title}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm text-[#434656] lg:text-base">
+                  {embedded
+                    ? glossaryText.embeddedDescription
+                    : glossaryText.description}
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
+              {terms.length} {glossaryText.tag}
+            </span>
+          )}
 
           <button
             type="button"
@@ -251,7 +308,7 @@ export default function GlossaryManager({
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-5 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)]"
           >
             <PlusIcon className="h-4 w-4" strokeWidth={1.8} />
-            Add New Term
+            {glossaryText.add}
           </button>
         </div>
 
@@ -259,9 +316,9 @@ export default function GlossaryManager({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               {[
-                { value: "all", label: "All Terms" },
-                { value: "true", label: "Enabled" },
-                { value: "false", label: "Disabled" },
+                { value: "all", label: glossaryText.allTerms },
+                { value: "true", label: glossaryText.enabled },
+                { value: "false", label: glossaryText.disabled },
               ].map((filter) => {
                 const active = enabledFilter === filter.value;
                 return (
@@ -290,42 +347,36 @@ export default function GlossaryManager({
                   onChange={(event) =>
                     startTransition(() => setQuery(event.target.value))
                   }
-                  placeholder="Search by term or translation..."
+                  placeholder={glossaryText.search}
                   className="w-full rounded-xl bg-[#f9f9ff] py-3 pr-4 pl-11 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/20"
                 />
               </label>
 
-              <label className="relative block">
-                <FilterIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#737688]" />
-                <select
-                  value={sourceLangFilter}
-                  onChange={(event) => setSourceLangFilter(event.target.value)}
-                  className="w-full appearance-none rounded-xl bg-[#f9f9ff] py-3 pr-4 pl-10 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/20"
-                >
-                  <option value="">All source langs</option>
-                  {sourceLanguages.map((language) => (
-                    <option key={language} value={language}>
-                      {language}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <AppSelect
+                value={sourceLangFilter || ALL_SOURCE_LANG_VALUE}
+                onValueChange={(value) =>
+                  setSourceLangFilter(value === ALL_SOURCE_LANG_VALUE ? "" : value)
+                }
+                options={sourceLanguageOptions}
+                ariaLabel={glossaryText.allSourceLangs}
+                leading={
+                  <FilterIcon className="h-4 w-4 shrink-0 text-[#737688]" strokeWidth={1.8} />
+                }
+                triggerClassName="w-full justify-between bg-[#f9f9ff] px-3 py-3 text-sm shadow-none ring-[#c3c5d9]/25 hover:bg-[#f5f7ff]"
+              />
 
-              <label className="relative block">
-                <FilterIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#737688]" />
-                <select
-                  value={targetLangFilter}
-                  onChange={(event) => setTargetLangFilter(event.target.value)}
-                  className="w-full appearance-none rounded-xl bg-[#f9f9ff] py-3 pr-4 pl-10 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/20"
-                >
-                  <option value="">All target langs</option>
-                  {targetLanguages.map((language) => (
-                    <option key={language} value={language}>
-                      {language}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <AppSelect
+                value={targetLangFilter || ALL_TARGET_LANG_VALUE}
+                onValueChange={(value) =>
+                  setTargetLangFilter(value === ALL_TARGET_LANG_VALUE ? "" : value)
+                }
+                options={targetLanguageOptions}
+                ariaLabel={glossaryText.allTargetLangs}
+                leading={
+                  <FilterIcon className="h-4 w-4 shrink-0 text-[#737688]" strokeWidth={1.8} />
+                }
+                triggerClassName="w-full justify-between bg-[#f9f9ff] px-3 py-3 text-sm shadow-none ring-[#c3c5d9]/25 hover:bg-[#f5f7ff]"
+              />
             </div>
           </div>
 
@@ -335,27 +386,27 @@ export default function GlossaryManager({
             </p>
           ) : null}
 
-          <div className="mt-4 overflow-x-auto">
+          <div className="custom-scrollbar mt-4 max-h-[min(34rem,calc(100vh-24rem))] overflow-auto rounded-2xl">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="bg-[#f0f3ff]/70 text-[#434656]">
+                <tr className="sticky top-0 z-10 bg-[#f0f3ff]/95 text-[#434656] backdrop-blur-sm">
                   <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
-                    Original Term
+                    {glossaryText.originalTerm}
                   </th>
                   <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
-                    Translated Term
+                    {glossaryText.translatedTerm}
                   </th>
                   <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
-                    Language Pair
+                    {glossaryText.languagePair}
                   </th>
                   <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
-                    Note
+                    {glossaryText.note}
                   </th>
                   <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase">
-                    Status
+                    {glossaryText.status}
                   </th>
                   <th className="px-6 py-4 text-xs font-bold tracking-[0.18em] uppercase text-right">
-                    Actions
+                    {glossaryText.actions}
                   </th>
                 </tr>
               </thead>
@@ -378,7 +429,7 @@ export default function GlossaryManager({
                       </div>
                     </td>
                     <td className="max-w-[280px] px-6 py-5 text-sm text-[#57657a]">
-                      {term.note || "No note"}
+                      {term.note || glossaryText.noNote}
                     </td>
                     <td className="px-6 py-5">
                       <button
@@ -390,7 +441,7 @@ export default function GlossaryManager({
                             : "rounded-full bg-[#f0f3ff] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#737688] uppercase"
                         }
                       >
-                        {term.enabled ? "Enabled" : "Disabled"}
+                        {term.enabled ? glossaryText.enabled : glossaryText.disabled}
                       </button>
                     </td>
                     <td className="px-6 py-5">
@@ -399,7 +450,7 @@ export default function GlossaryManager({
                           type="button"
                           onClick={() => openEditDialog(term)}
                           className="rounded-lg p-2 text-[#434656] transition hover:bg-[#dee8ff] hover:text-[#003ec7]"
-                          title="Edit term"
+                          title={glossaryText.editAction}
                         >
                           <EditIcon className="h-4 w-4" strokeWidth={1.8} />
                         </button>
@@ -407,7 +458,11 @@ export default function GlossaryManager({
                           type="button"
                           onClick={() => void handleToggleEnabled(term)}
                           className="rounded-lg p-2 text-[#434656] transition hover:bg-[#dee8ff] hover:text-[#003ec7]"
-                          title={term.enabled ? "Disable term" : "Enable term"}
+                          title={
+                            term.enabled
+                              ? glossaryText.disableAction
+                              : glossaryText.enableAction
+                          }
                         >
                           <ToggleIcon className="h-4 w-4" strokeWidth={1.8} />
                         </button>
@@ -415,7 +470,7 @@ export default function GlossaryManager({
                           type="button"
                           onClick={() => void handleDelete(term)}
                           className="rounded-lg p-2 text-[#434656] transition hover:bg-[#ffdad6] hover:text-[#93000a]"
-                          title="Delete term"
+                          title={glossaryText.deleteAction}
                         >
                           <DeleteIcon className="h-4 w-4" strokeWidth={1.8} />
                         </button>
@@ -428,16 +483,16 @@ export default function GlossaryManager({
           </div>
 
           {loading ? (
-            <p className="mt-4 text-sm text-[#737688]">Loading glossary terms...</p>
+            <p className="mt-4 text-sm text-[#737688]">{glossaryText.loading}</p>
           ) : null}
 
           {!loading && terms.length === 0 ? (
             <div className="mt-6 rounded-2xl bg-[#f0f3ff] px-6 py-10 text-center">
               <p className="font-headline text-xl font-extrabold text-[#111c2d]">
-                No glossary terms found
+                {glossaryText.emptyTitle}
               </p>
               <p className="mt-2 text-sm text-[#57657a]">
-                Adjust the current filters or create the first project term.
+                {glossaryText.emptyDescription}
               </p>
             </div>
           ) : null}
@@ -450,20 +505,22 @@ export default function GlossaryManager({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[11px] font-extrabold tracking-[0.24em] text-[#434656]">
-                  Glossary Term
+                  {glossaryText.title}
                 </p>
                 <h3 className="font-headline mt-1 text-2xl font-extrabold tracking-tight text-[#111c2d]">
-                  {editingTerm ? "Edit Term" : "Add New Term"}
+                  {editingTerm ? glossaryText.editTerm : glossaryText.addTerm}
                 </h3>
               </div>
               <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#003ec7] uppercase">
-                {formState.enabled ? "Enabled" : "Disabled"}
+                {formState.enabled ? glossaryText.enabled : glossaryText.disabled}
               </span>
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <label className="block">
-                <span className="mb-1 block text-sm font-bold text-[#434656]">Source Term</span>
+                <span className="mb-1 block text-sm font-bold text-[#434656]">
+                  {glossaryText.sourceTerm}
+                </span>
                 <input
                   type="text"
                   value={formState.source_term}
@@ -479,7 +536,7 @@ export default function GlossaryManager({
 
               <label className="block">
                 <span className="mb-1 block text-sm font-bold text-[#434656]">
-                  Translated Term
+                  {glossaryText.targetTerm}
                 </span>
                 <input
                   type="text"
@@ -495,7 +552,9 @@ export default function GlossaryManager({
               </label>
 
               <label className="block">
-                <span className="mb-1 block text-sm font-bold text-[#434656]">Source Lang</span>
+                <span className="mb-1 block text-sm font-bold text-[#434656]">
+                  {glossaryText.sourceLang}
+                </span>
                 <input
                   type="text"
                   value={formState.source_lang}
@@ -510,7 +569,9 @@ export default function GlossaryManager({
               </label>
 
               <label className="block">
-                <span className="mb-1 block text-sm font-bold text-[#434656]">Target Lang</span>
+                <span className="mb-1 block text-sm font-bold text-[#434656]">
+                  {glossaryText.targetLang}
+                </span>
                 <input
                   type="text"
                   value={formState.target_lang}
@@ -526,7 +587,9 @@ export default function GlossaryManager({
             </div>
 
             <label className="mt-4 block">
-              <span className="mb-1 block text-sm font-bold text-[#434656]">Note</span>
+              <span className="mb-1 block text-sm font-bold text-[#434656]">
+                {glossaryText.note}
+              </span>
               <textarea
                 value={formState.note}
                 onChange={(event) =>
@@ -552,7 +615,7 @@ export default function GlossaryManager({
                 }
                 className="h-4 w-4 rounded border-[#c3c5d9]"
               />
-              Enable this term for active translation
+              {glossaryText.enableTerm}
             </label>
 
             {errorMessage ? (
@@ -567,7 +630,7 @@ export default function GlossaryManager({
                 onClick={() => setShowDialog(false)}
                 className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-[#434656] shadow-sm transition hover:bg-[#dee8ff]"
               >
-                Cancel
+                {glossaryText.cancel}
               </button>
               <button
                 type="button"
@@ -575,12 +638,33 @@ export default function GlossaryManager({
                 disabled={saving}
                 className="rounded-xl bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-4 py-2 text-sm font-bold text-white shadow-[0_14px_28px_rgba(0,82,255,0.22)] transition hover:shadow-[0_18px_36px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
               >
-                {saving ? "Saving..." : editingTerm ? "Save Changes" : "Create Term"}
+                {saving
+                  ? getUiText(uiLanguage).provider.saving
+                  : editingTerm
+                    ? glossaryText.saveChanges
+                    : glossaryText.createTerm}
               </button>
             </div>
           </div>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        open={Boolean(confirmDeleteTerm)}
+        title={glossaryDeleteTitle}
+        description={
+          confirmDeleteTerm
+            ? formatUiText(glossaryText.deleteConfirm, {
+                name: confirmDeleteTerm.source_term,
+              })
+            : ""
+        }
+        confirmLabel={glossaryText.deleteAction}
+        cancelLabel={dialogCancelLabel}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteTerm(null)}
+        tone="danger"
+      />
     </>
   );
 }

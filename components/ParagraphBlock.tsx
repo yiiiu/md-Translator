@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { renderMarkdown } from "@/lib/markdown-renderer";
+import { getUiText } from "@/lib/ui-text";
 import { retryParagraph } from "@/services/api";
 import { type Paragraph, useTranslationStore } from "@/stores/translation";
 
@@ -9,16 +10,15 @@ interface Props {
   paragraph: Paragraph;
 }
 
-const statusLabels: Partial<Record<Paragraph["status"], string>> = {
-  translating: "Sync",
-  error: "Error",
-  edited: "Edit",
-};
-
 export default function ParagraphBlock({ paragraph }: Props) {
+  const { engine, targetLang, uiLanguage } = useTranslationStore();
+  const paragraphText = getUiText(uiLanguage).paragraph;
+  const statusLabels: Partial<Record<Paragraph["status"], string>> = {
+    translating: paragraphText.translating,
+    error: paragraphText.error,
+    edited: paragraphText.edited,
+  };
   const content = paragraph.translated || paragraph.original;
-  const engine = useTranslationStore((state) => state.engine);
-  const targetLang = useTranslationStore((state) => state.targetLang);
   const [renderedContent, setRenderedContent] = useState("");
   const [retrying, setRetrying] = useState(false);
 
@@ -88,10 +88,10 @@ export default function ParagraphBlock({ paragraph }: Props) {
             type="button"
             onClick={handleRetry}
             disabled={retrying}
-            aria-label="Retry paragraph"
+            aria-label={paragraphText.retry}
             className="rounded-full bg-white px-3 py-1 font-bold text-[#ba1a1a] shadow-sm transition hover:bg-[#fff7f6] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {retrying ? "重试中..." : "重试"}
+            {retrying ? paragraphText.retrying : paragraphText.retry}
           </button>
         </div>
       ) : null}
