@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useTranslationStore } from "@/stores/translation";
 import { parseMarkdown } from "@/utils/markdown-parser";
 
@@ -19,7 +19,10 @@ function isMarkdownFile(file: File) {
   return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".txt");
 }
 
-function isEditableTarget(target: EventTarget | null, importTextarea: HTMLTextAreaElement | null) {
+function isEditableTarget(
+  target: EventTarget | null,
+  importTextarea: HTMLTextAreaElement | null
+) {
   if (!(target instanceof HTMLElement)) return false;
   if (target === importTextarea) return false;
   return Boolean(target.closest("input, textarea, [contenteditable='true']"));
@@ -29,6 +32,8 @@ export default function InputArea() {
   const { setParagraphs, reset, paragraphs } = useTranslationStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragDepthRef = useRef(0);
+  const [draggingMarkdown, setDraggingMarkdown] = useState(false);
 
   const syncMarkdown = (markdown: string) => {
     if (!markdown.trim()) return;
@@ -61,9 +66,24 @@ export default function InputArea() {
       syncMarkdown(markdown);
     };
 
+    const handleDragEnter = (event: DragEvent) => {
+      if (!event.dataTransfer?.types.includes("Files")) return;
+      event.preventDefault();
+      dragDepthRef.current += 1;
+      setDraggingMarkdown(true);
+    };
+
     const handleDragOver = (event: DragEvent) => {
       if (!event.dataTransfer?.types.includes("Files")) return;
       event.preventDefault();
+    };
+
+    const handleDragLeave = (event: DragEvent) => {
+      if (!event.dataTransfer?.types.includes("Files")) return;
+      dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+      if (dragDepthRef.current === 0) {
+        setDraggingMarkdown(false);
+      }
     };
 
     const handleDrop = (event: DragEvent) => {
@@ -71,16 +91,22 @@ export default function InputArea() {
       if (!file) return;
 
       event.preventDefault();
+      dragDepthRef.current = 0;
+      setDraggingMarkdown(false);
       readMarkdownFile(file);
     };
 
     window.addEventListener("paste", handlePaste);
+    window.addEventListener("dragenter", handleDragEnter);
     window.addEventListener("dragover", handleDragOver);
+    window.addEventListener("dragleave", handleDragLeave);
     window.addEventListener("drop", handleDrop);
 
     return () => {
       window.removeEventListener("paste", handlePaste);
+      window.removeEventListener("dragenter", handleDragEnter);
       window.removeEventListener("dragover", handleDragOver);
+      window.removeEventListener("dragleave", handleDragLeave);
       window.removeEventListener("drop", handleDrop);
     };
   });
@@ -104,66 +130,80 @@ export default function InputArea() {
   };
 
   return (
-    <footer
-      className="bottom-action-shell grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(12rem,18rem)] lg:items-center lg:px-8"
-    >
-      <textarea
-        ref={textareaRef}
-        placeholder="Paste Markdown here, or drag a .md file onto this bar."
-        className="h-12 min-h-12 resize-none rounded-xl bg-white px-4 py-3 font-mono text-xs leading-5 text-[#111c2d] shadow-sm outline-none ring-1 ring-[#c3c5d9]/15 transition focus:ring-2 focus:ring-[#0052ff]/20"
-      />
-
-      <div className="flex justify-center gap-2">
-        <button
-          type="button"
-          onClick={handleParse}
-          className="flex min-w-20 flex-col items-center rounded-xl px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#515f74] transition hover:bg-white"
-        >
-          <span className="text-sm">Parse</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="flex min-w-20 flex-col items-center rounded-xl bg-[#d5e3fc] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#003ec7] transition hover:bg-white"
-        >
-          <span className="text-sm">Upload</span>
-        </button>
-        <button
-          type="button"
-          onClick={handleClear}
-          className="flex min-w-20 flex-col items-center rounded-xl px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#515f74] transition hover:bg-white"
-        >
-          <span className="text-sm">Clear</span>
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".md,.markdown,.txt"
-          onChange={handleFileUpload}
-          className="hidden"
-        />
-      </div>
-
-      <div className="hidden items-center justify-end gap-3 lg:flex">
-        <div className="min-w-32">
-          <p className="mb-1 text-right text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#434656]">
-            {paragraphs.length} buffers
-          </p>
-          <div className="h-1.5 overflow-hidden rounded-full bg-[#d8e3fb]">
-            <div
-              className="h-full rounded-full bg-[#003ec7]"
-              style={{ width: paragraphs.length > 0 ? "36%" : "0%" }}
-            />
+    <>
+      {draggingMarkdown ? (
+        <div className="pointer-events-none fixed inset-0 z-40 grid place-items-center bg-[#111c2d]/18 p-6 backdrop-blur-sm">
+          <div className="rounded-3xl bg-white/90 px-10 py-8 text-center shadow-[0_32px_64px_rgba(17,28,45,0.18)] ring-1 ring-[#0052ff]/20">
+            <p className="font-headline text-2xl font-extrabold tracking-tight text-[#003ec7]">
+              Drop Markdown to import
+            </p>
+            <p className="mt-2 text-sm font-medium text-[#434656]">
+              Supports .md, .markdown, and .txt files.
+            </p>
           </div>
         </div>
-        <div className="h-8 w-px bg-[#c3c5d9]/30" />
-        <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#003ec7]">
-          Active
-        </span>
-        <span className="text-[10px] font-bold text-[#737688]">
-          Drop .md anywhere · Ctrl+V paste
-        </span>
-      </div>
-    </footer>
+      ) : null}
+
+      <footer className="bottom-action-shell grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(12rem,18rem)] lg:items-center lg:px-8">
+        <textarea
+          ref={textareaRef}
+          placeholder="Paste Markdown here, or drag a .md file onto this bar."
+          className="h-12 min-h-12 resize-none rounded-xl bg-white px-4 py-3 font-mono text-xs leading-5 text-[#111c2d] shadow-sm outline-none ring-1 ring-[#c3c5d9]/15 transition focus:ring-2 focus:ring-[#0052ff]/20"
+        />
+
+        <div className="flex justify-center gap-2">
+          <button
+            type="button"
+            onClick={handleParse}
+            className="flex min-w-20 flex-col items-center rounded-xl px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#515f74] transition hover:bg-white"
+          >
+            <span className="text-sm">Parse</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex min-w-20 flex-col items-center rounded-xl bg-[#d5e3fc] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#003ec7] transition hover:bg-white"
+          >
+            <span className="text-sm">Upload</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleClear}
+            className="flex min-w-20 flex-col items-center rounded-xl px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#515f74] transition hover:bg-white"
+          >
+            <span className="text-sm">Clear</span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".md,.markdown,.txt"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+        </div>
+
+        <div className="hidden items-center justify-end gap-3 lg:flex">
+          <div className="min-w-32">
+            <p className="mb-1 text-right text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#434656]">
+              {paragraphs.length} buffers
+            </p>
+            <div className="h-1.5 overflow-hidden rounded-full bg-[#d8e3fb]">
+              <div
+                className="h-full rounded-full bg-[#003ec7]"
+                style={{ width: paragraphs.length > 0 ? "36%" : "0%" }}
+              />
+            </div>
+          </div>
+          <div className="h-8 w-px bg-[#c3c5d9]/30" />
+          <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#003ec7]">
+            Active
+          </span>
+          <span className="text-[10px] font-bold text-[#737688]">
+            Drop .md anywhere / Ctrl+V paste
+          </span>
+        </div>
+      </footer>
+    </>
   );
 }
+
