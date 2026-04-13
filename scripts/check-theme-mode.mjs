@@ -18,6 +18,16 @@ for (const expected of [
   }
 }
 
+if (
+  !db.includes("if (_db) {") ||
+  !db.includes("ensureAppSettingsColumns(_db);") ||
+  db.indexOf("if (_db) {") > db.indexOf("ensureAppSettingsColumns(_db);")
+) {
+  throw new Error(
+    "lib/db.ts must ensure app_settings columns even when reusing the cached database connection"
+  );
+}
+
 if (!existsSync("stores/app-settings.ts")) {
   throw new Error("stores/app-settings.ts must exist");
 }
