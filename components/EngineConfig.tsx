@@ -22,6 +22,7 @@ function defaultBaseUrlFor(engineId: string) {
 
 export default function EngineConfig({ engineId, onClose }: Props) {
   const [providerName, setProviderName] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [baseUrl, setBaseUrl] = useState(defaultBaseUrlFor(engineId));
@@ -44,6 +45,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
     setBaseUrl(defaultBaseUrlFor(engineId));
     setModels([]);
     setProviderName("");
+    setLogoUrl("");
     setConfigured(false);
     setApiKeyConfigured(false);
     setStatusKind("idle");
@@ -67,6 +69,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
       setBaseUrl(config.base_url || defaultBaseUrlFor(engineId));
       if (isCustomEngine) {
         setProviderName(config.name || "");
+        setLogoUrl(config.logo_url || "");
       }
     });
 
@@ -144,6 +147,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
         model: model || undefined,
         base_url: baseUrl || undefined,
         name: isCustomEngine ? providerName || undefined : undefined,
+        logo_url: isCustomEngine ? logoUrl || undefined : undefined,
       });
 
       if (result.error) {
@@ -189,18 +193,32 @@ export default function EngineConfig({ engineId, onClose }: Props) {
 
         <div className="mt-5 space-y-4">
           {isCustomEngine ? (
-            <label className="block">
-              <span className="mb-1 block text-sm font-bold text-[#434656]">
-                Provider Name
-              </span>
-              <input
-                type="text"
-                value={providerName}
-                onChange={(event) => setProviderName(event.target.value)}
-                placeholder="Relay Api"
-                className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
-              />
-            </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1 block text-sm font-bold text-[#434656]">
+                  Provider Name
+                </span>
+                <input
+                  type="text"
+                  value={providerName}
+                  onChange={(event) => setProviderName(event.target.value)}
+                  placeholder="Relay Api"
+                  className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-bold text-[#434656]">
+                  Logo Url
+                </span>
+                <input
+                  type="url"
+                  value={logoUrl}
+                  onChange={(event) => setLogoUrl(event.target.value)}
+                  placeholder="https://example.com/logo.svg"
+                  className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
+                />
+              </label>
+            </div>
           ) : null}
 
           <label className="block">

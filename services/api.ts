@@ -34,6 +34,7 @@ export interface EngineListResponse {
   engines?: Array<{
     id: string;
     name: string;
+    logo_url?: string;
     configured: boolean;
   }>;
 }
@@ -56,6 +57,7 @@ export interface EngineConfigResponse {
   api_key_configured: boolean;
   model: string;
   base_url: string;
+  logo_url?: string;
   error?: string;
 }
 
@@ -64,6 +66,7 @@ interface EngineConfigRequest {
   model?: string;
   base_url?: string;
   name?: string;
+  logo_url?: string;
 }
 
 const RETRY_FAILED_CONCURRENCY = 4;

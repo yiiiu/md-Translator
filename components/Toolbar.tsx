@@ -6,11 +6,12 @@ import {
   Settings as SettingsIcon,
   Upload as UploadIcon,
 } from "lucide-react";
+import { SiOpenai } from "react-icons/si";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { fetchEngines, startTranslation } from "@/services/api";
 import { useTranslationStore } from "@/stores/translation";
 import EngineConfig from "./EngineConfig";
-import AppSelect from "./ui/AppSelect";
+import AppSelect, { type AppSelectOption } from "./ui/AppSelect";
 
 const TARGET_LANGUAGES = [
   { value: "zh-CN", label: "Chinese (Cn)" },
@@ -20,8 +21,8 @@ const TARGET_LANGUAGES = [
 ];
 
 const DEFAULT_ENGINE_OPTIONS = [
-  { value: "openai", label: "Openai" },
-  { value: "custom-openai", label: "Custom Openai-Compatible" },
+  { value: "openai", label: "Openai", logoUrl: "" },
+  { value: "custom-openai", label: "Custom Openai-Compatible", logoUrl: "" },
 ];
 
 function isMarkdownFile(file: File) {
@@ -29,7 +30,15 @@ function isMarkdownFile(file: File) {
   return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".txt");
 }
 
-function ProviderLogo({ engineId, label }: { engineId: string; label: string }) {
+function ProviderLogo({
+  engineId,
+  label,
+  logoUrl,
+}: {
+  engineId: string;
+  label: string;
+  logoUrl?: string;
+}) {
   const normalized = `${engineId} ${label}`.toLowerCase();
   const mark = normalized.includes("openai")
     ? "O"
@@ -42,7 +51,17 @@ function ProviderLogo({ engineId, label }: { engineId: string; label: string }) 
       aria-label={`${label} provider`}
       className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#111c2d] text-[10px] font-extrabold tracking-[-0.02em] text-white shadow-sm ring-1 ring-[#0052ff]/20"
     >
-      {mark}
+      {logoUrl ? (
+        <span
+          aria-hidden="true"
+          className="h-4 w-4 rounded-sm bg-contain bg-center bg-no-repeat"
+          style={{ backgroundImage: `url("${logoUrl}")` }}
+        />
+      ) : normalized.includes("openai") ? (
+        <SiOpenai className="h-3.5 w-3.5" title="" />
+      ) : (
+        mark
+      )}
     </span>
   );
 }
@@ -79,6 +98,7 @@ export default function Toolbar() {
         data.engines.map((item) => ({
           value: item.id,
           label: item.name,
+          logoUrl: item.logo_url || "",
         }))
       );
     } catch (error) {
@@ -186,7 +206,20 @@ export default function Toolbar() {
               onValueChange={setEngine}
               options={engineOptions}
               ariaLabel="Translation engine"
-              leading={<ProviderLogo engineId={engine} label={selectedEngine.label} />}
+              leading={
+                <ProviderLogo
+                  engineId={engine}
+                  label={selectedEngine.label}
+                  logoUrl={selectedEngine.logoUrl}
+                />
+              }
+              renderOptionLeading={(option: AppSelectOption) => (
+                <ProviderLogo
+                  engineId={option.value}
+                  label={option.label}
+                  logoUrl={option.logoUrl}
+                />
+              )}
               width={engineSelectWidth}
               triggerClassName="px-3 py-2 text-sm font-semibold"
             />

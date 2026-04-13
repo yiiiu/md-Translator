@@ -14,6 +14,17 @@ function normalizeString(value: unknown) {
   return value.trim();
 }
 
+function readExtra(extra: string | undefined) {
+  if (!extra) return {};
+
+  try {
+    const parsed = JSON.parse(extra) as Record<string, unknown>;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 function isSupportedEngine(id: string) {
   return Boolean(ENGINE_DEFAULT_NAMES[id]);
 }
@@ -31,6 +42,8 @@ export async function GET(
   const config = getEngineConfig(id);
   const apiKey = normalizeString(config?.api_key);
   const baseUrl = normalizeString(config?.base_url);
+  const extra = readExtra(config?.extra);
+  const logoUrl = typeof extra.logo_url === "string" ? normalizeString(extra.logo_url) : "";
 
   return NextResponse.json({
     id,
@@ -39,6 +52,7 @@ export async function GET(
     api_key_configured: Boolean(apiKey),
     model: config?.model || "",
     base_url: baseUrl,
+    logo_url: logoUrl,
   });
 }
 
@@ -61,6 +75,13 @@ export async function POST(
       : existing?.base_url || "";
   const name = normalizeString(body.name) || existing?.name || ENGINE_DEFAULT_NAMES[id];
   const model = typeof body.model === "string" ? body.model.trim() : existing?.model || "";
+  const existingExtra = readExtra(existing?.extra);
+  const logoUrl =
+    typeof body.logo_url === "string"
+      ? normalizeString(body.logo_url)
+      : typeof existingExtra.logo_url === "string"
+        ? normalizeString(existingExtra.logo_url)
+        : "";
 
   if (!apiKey) {
     return NextResponse.json({ error: "api_key is required" }, { status: 400 });
@@ -76,7 +97,10 @@ export async function POST(
     api_key: apiKey,
     model,
     base_url: baseUrl,
-    extra: "{}",
+    extra: JSON.stringify({
+      ...existingExtra,
+      logo_url: logoUrl,
+    }),
   });
 
   return NextResponse.json({ ok: true });

@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 export interface AppSelectOption {
   value: string;
   label: string;
+  logoUrl?: string;
 }
 
 interface AppSelectProps {
@@ -19,6 +20,7 @@ interface AppSelectProps {
   contentClassName?: string;
   leading?: ReactNode;
   prefix?: ReactNode;
+  renderOptionLeading?: (option: AppSelectOption) => ReactNode;
   width?: string;
 }
 
@@ -32,6 +34,7 @@ export default function AppSelect({
   contentClassName = "",
   leading,
   prefix,
+  renderOptionLeading,
   width,
 }: AppSelectProps) {
   const selectedOption = options.find((option) => option.value === value);
@@ -67,11 +70,12 @@ export default function AppSelect({
               <Select.Item
                 key={option.value}
                 value={option.value}
-                className="relative flex cursor-pointer select-none items-center rounded-xl py-2 pr-3 pl-8 font-semibold outline-none transition data-[highlighted]:bg-[#dee8ff] data-[highlighted]:text-[#003ec7]"
+                className="relative flex cursor-pointer select-none items-center gap-2 rounded-xl py-2 pr-3 pl-8 font-semibold outline-none transition data-[highlighted]:bg-[#dee8ff] data-[highlighted]:text-[#003ec7]"
               >
                 <Select.ItemIndicator className="absolute left-2 grid h-4 w-4 place-items-center text-[#003ec7]">
                   <Check className="h-3.5 w-3.5" strokeWidth={2} />
                 </Select.ItemIndicator>
+                {renderOptionLeading ? renderOptionLeading(option) : null}
                 <Select.ItemText>{option.label}</Select.ItemText>
               </Select.Item>
             ))}
