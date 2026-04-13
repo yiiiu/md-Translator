@@ -24,6 +24,26 @@ export default function PreviewPane({
   emptyState = "Paste Markdown below, or upload a .md file to start.",
 }: Props) {
   const isTranslation = title.toLowerCase() === "translation";
+  const outputMarkdown = paragraphs
+    .map((paragraph) => paragraph.translated || paragraph.original)
+    .join("\n\n");
+
+  const handleCopy = async () => {
+    if (!outputMarkdown) return;
+    await navigator.clipboard.writeText(outputMarkdown);
+  };
+
+  const handleDownload = () => {
+    if (!outputMarkdown) return;
+
+    const blob = new Blob([outputMarkdown], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "translation.md";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <section className="flex min-h-0 flex-col gap-3">
@@ -40,14 +60,18 @@ export default function PreviewPane({
             <>
               <button
                 type="button"
-                className="rounded-full px-2 py-1 text-xs font-bold text-[#737688] transition hover:bg-[#dee8ff] hover:text-[#003ec7]"
+                onClick={handleCopy}
+                disabled={!outputMarkdown}
+                className="rounded-full px-2 py-1 text-xs font-bold text-[#737688] transition hover:bg-[#dee8ff] hover:text-[#003ec7] disabled:cursor-not-allowed disabled:opacity-45"
                 aria-label="Copy translation"
               >
                 Copy
               </button>
               <button
                 type="button"
-                className="rounded-full px-2 py-1 text-xs font-bold text-[#737688] transition hover:bg-[#dee8ff] hover:text-[#003ec7]"
+                onClick={handleDownload}
+                disabled={!outputMarkdown}
+                className="rounded-full px-2 py-1 text-xs font-bold text-[#737688] transition hover:bg-[#dee8ff] hover:text-[#003ec7] disabled:cursor-not-allowed disabled:opacity-45"
                 aria-label="Download translation"
               >
                 Save
@@ -90,4 +114,3 @@ export default function PreviewPane({
     </section>
   );
 }
-
