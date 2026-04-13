@@ -29,7 +29,7 @@ function isEditableTarget(
 }
 
 export default function InputArea() {
-  const { setParagraphs, reset, paragraphs } = useTranslationStore();
+  const { setParagraphs, reset } = useTranslationStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragDepthRef = useRef(0);
@@ -144,7 +144,7 @@ export default function InputArea() {
         </div>
       ) : null}
 
-      <footer className="bottom-action-shell grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(12rem,18rem)] lg:items-center lg:px-8">
+      <footer className="bottom-action-shell grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(10rem,14rem)] lg:items-center lg:px-8">
         <textarea
           ref={textareaRef}
           placeholder="Paste Markdown here, or drag a .md file onto this bar."
@@ -183,18 +183,6 @@ export default function InputArea() {
         </div>
 
         <div className="hidden items-center justify-end gap-3 lg:flex">
-          <div className="min-w-32">
-            <p className="mb-1 text-right text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#434656]">
-              {paragraphs.length} buffers
-            </p>
-            <div className="h-1.5 overflow-hidden rounded-full bg-[#d8e3fb]">
-              <div
-                className="h-full rounded-full bg-[#003ec7]"
-                style={{ width: paragraphs.length > 0 ? "36%" : "0%" }}
-              />
-            </div>
-          </div>
-          <div className="h-8 w-px bg-[#c3c5d9]/30" />
           <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#003ec7]">
             Active
           </span>
@@ -206,4 +194,3 @@ export default function InputArea() {
     </>
   );
 }
-
