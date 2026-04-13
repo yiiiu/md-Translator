@@ -33,7 +33,7 @@ export default function StatusBar() {
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="text-[#737688]">▣</span>
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-[#434656]">
+          <span className="text-[10px] font-extrabold tracking-[0.24em] text-[#434656]">
             Translation Logs
           </span>
         </div>
@@ -43,12 +43,12 @@ export default function StatusBar() {
               type="button"
               onClick={handleRetryFailures}
               disabled={!canRetryFailures}
-              className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#ba1a1a] shadow-sm transition hover:bg-[#ffdad6] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold tracking-[0.12em] text-[#ba1a1a] shadow-sm transition hover:bg-[#ffdad6] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {retryingFailures ? "重试中..." : `重试失败段落（${errors}）`}
             </button>
           ) : null}
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#003ec7]">
+          <span className="text-[10px] font-extrabold tracking-[0.18em] text-[#003ec7]">
             {connectionLost ? "Connection Lost" : "Ready"}
           </span>
         </div>
@@ -81,7 +81,7 @@ export default function StatusBar() {
         </div>
 
         <div className="min-w-44">
-          <div className="mb-1 flex items-center justify-between text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#434656]">
+          <div className="mb-1 flex items-center justify-between text-[10px] font-extrabold tracking-[0.14em] text-[#434656]">
             <span>Progress</span>
             <span>{Math.round(progress)}%</span>
           </div>
@@ -96,4 +96,3 @@ export default function StatusBar() {
     </section>
   );
 }
-

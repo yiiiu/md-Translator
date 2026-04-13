@@ -112,11 +112,11 @@ export default function InputArea() {
         </div>
 
         <div className="flex items-center justify-end gap-2">
-          <span className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#434656] ring-1 ring-[#c3c5d9]/20">
-            {paragraphs.length} BUFFERS
+          <span className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold tracking-[0.14em] text-[#434656] ring-1 ring-[#c3c5d9]/20">
+            {paragraphs.length} Buffers
           </span>
-          <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#003ec7]">
-            ACTIVE
+          <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#003ec7]">
+            Active
           </span>
         </div>
       </footer>

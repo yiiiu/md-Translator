@@ -10,10 +10,10 @@ interface Props {
 }
 
 const statusLabels: Partial<Record<Paragraph["status"], string>> = {
-  translating: "SYNC",
-  done: "READY",
-  error: "ERROR",
-  edited: "EDIT",
+  translating: "Sync",
+  done: "Ready",
+  error: "Error",
+  edited: "Edit",
 };
 
 export default function ParagraphBlock({ paragraph }: Props) {
@@ -99,4 +99,3 @@ export default function ParagraphBlock({ paragraph }: Props) {
     </article>
   );
 }
-

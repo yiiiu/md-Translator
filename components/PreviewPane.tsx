@@ -116,7 +116,7 @@ export default function PreviewPane({
     <section className="flex min-h-0 flex-col gap-3">
       <div className="flex items-center justify-between px-2">
         <span
-          className={`text-[10px] font-extrabold uppercase tracking-[0.24em] ${
+          className={`text-[10px] font-extrabold tracking-[0.24em] ${
             isTranslation ? "text-[#003ec7]" : "text-[#434656]"
           }`}
         >
@@ -129,7 +129,7 @@ export default function PreviewPane({
                 <button
                   type="button"
                   onClick={() => setMode("preview")}
-                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] transition ${
+                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold tracking-[0.14em] transition ${
                     mode === "preview"
                       ? "bg-[#d5e3fc] text-[#003ec7]"
                       : "text-[#737688] hover:text-[#003ec7]"
@@ -141,7 +141,7 @@ export default function PreviewPane({
                 <button
                   type="button"
                   onClick={() => setMode("code")}
-                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] transition ${
+                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold tracking-[0.14em] transition ${
                     mode === "code"
                       ? "bg-[#d5e3fc] text-[#003ec7]"
                       : "text-[#737688] hover:text-[#003ec7]"
@@ -171,8 +171,8 @@ export default function PreviewPane({
               </button>
             </>
           ) : (
-            <span className="rounded-md bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#737688] ring-1 ring-[#c3c5d9]/20">
-              README.MD
+            <span className="rounded-md bg-white px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-[#737688] ring-1 ring-[#c3c5d9]/20">
+              Readme.md
             </span>
           )}
         </div>

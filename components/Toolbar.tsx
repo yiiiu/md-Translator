@@ -6,15 +6,15 @@ import { useTranslationStore } from "@/stores/translation";
 import EngineConfig from "./EngineConfig";
 
 const TARGET_LANGUAGES = [
-  { value: "zh-CN", label: "Chinese (CN)" },
-  { value: "zh-TW", label: "Chinese (TW)" },
+  { value: "zh-CN", label: "Chinese (Cn)" },
+  { value: "zh-TW", label: "Chinese (Tw)" },
   { value: "ja", label: "Japanese" },
   { value: "ko", label: "Korean" },
 ];
 
 const DEFAULT_ENGINE_OPTIONS = [
-  { value: "openai", label: "OpenAI" },
-  { value: "custom-openai", label: "Custom OpenAI-Compatible" },
+  { value: "openai", label: "Openai" },
+  { value: "custom-openai", label: "Custom Openai-Compatible" },
 ];
 
 function isMarkdownFile(file: File) {
@@ -33,7 +33,7 @@ function ProviderLogo({ engineId, label }: { engineId: string; label: string }) 
   return (
     <span
       aria-label={`${label} provider`}
-      className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#111c2d] text-[10px] font-extrabold uppercase tracking-[-0.02em] text-white shadow-sm ring-1 ring-[#0052ff]/20"
+      className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#111c2d] text-[10px] font-extrabold tracking-[-0.02em] text-white shadow-sm ring-1 ring-[#0052ff]/20"
     >
       {mark}
     </span>
@@ -267,13 +267,13 @@ export default function Toolbar() {
               </select>
             </label>
 
-            <div className="flex items-center gap-2 rounded-xl bg-white p-1 text-xs font-extrabold uppercase tracking-[0.18em] text-[#003ec7] shadow-sm ring-1 ring-[#c3c5d9]/15">
+            <div className="flex items-center gap-2 rounded-xl bg-white p-1 text-xs font-extrabold tracking-[0.18em] text-[#003ec7] shadow-sm ring-1 ring-[#c3c5d9]/15">
               <span className="rounded-lg bg-[#d5e3fc] px-3 py-1.5">Auto</span>
               <span className="text-[#737688]">to</span>
               <select
                 value={targetLang}
                 onChange={(event) => setTargetLang(event.target.value)}
-                className="rounded-lg bg-transparent px-2 py-1.5 text-xs font-extrabold uppercase tracking-[0.18em] outline-none transition hover:bg-[#dee8ff]"
+                className="rounded-lg bg-transparent px-2 py-1.5 text-xs font-extrabold tracking-[0.18em] outline-none transition hover:bg-[#dee8ff]"
                 aria-label="Target language"
               >
                 {TARGET_LANGUAGES.map((language) => (
@@ -284,7 +284,7 @@ export default function Toolbar() {
               </select>
             </div>
 
-            <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#57657a]">
+            <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
               {paragraphs.length} paragraphs
             </span>
 

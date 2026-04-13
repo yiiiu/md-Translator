@@ -35,7 +35,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
   const [statusKind, setStatusKind] = useState<"idle" | "success" | "error">("idle");
 
   const isCustomEngine = engineId === "custom-openai";
-  const modalTitle = isCustomEngine ? "Custom OpenAI-Compatible Config" : "OpenAI Config";
+  const modalTitle = isCustomEngine ? "Custom Openai-Compatible Config" : "Openai Config";
   const modelListId = useMemo(() => `engine-models-${engineId}`, [engineId]);
 
   useEffect(() => {
@@ -171,7 +171,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
       <div className="custom-scrollbar max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-[#f9f9ff] p-6 shadow-[0_32px_64px_rgba(17,28,45,0.18)] ring-1 ring-[#c3c5d9]/20">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-[#434656]">
+            <p className="text-[11px] font-extrabold tracking-[0.24em] text-[#434656]">
               Engine Config
             </p>
             <h2 className="font-headline mt-1 text-2xl font-extrabold tracking-tight text-[#111c2d]">
@@ -197,24 +197,24 @@ export default function EngineConfig({ engineId, onClose }: Props) {
                 type="text"
                 value={providerName}
                 onChange={(event) => setProviderName(event.target.value)}
-                placeholder="Relay API"
+                placeholder="Relay Api"
                 className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
               />
             </label>
           ) : null}
 
           <label className="block">
-            <span className="mb-1 block text-sm font-bold text-[#434656]">API Key</span>
+            <span className="mb-1 block text-sm font-bold text-[#434656]">Api Key</span>
             <input
               type="password"
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
-              placeholder={apiKeyConfigured ? "Stored API key will be reused" : "sk-..."}
+              placeholder={apiKeyConfigured ? "Stored Api key will be reused" : "sk-..."}
               className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
             />
             {apiKeyConfigured ? (
               <p className="mt-1 text-xs text-[#737688]">
-                Leave blank to keep the saved API key.
+                Leave blank to keep the saved Api key.
               </p>
             ) : null}
           </label>
@@ -241,7 +241,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
 
           <label className="block">
             <span className="mb-1 block text-sm font-bold text-[#434656]">
-              Base URL
+              Base Url
             </span>
             <input
               type="text"

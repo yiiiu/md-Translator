@@ -132,11 +132,11 @@ export default function SplitView() {
     <div className="grid h-full min-h-0 flex-1 gap-5 lg:grid-cols-2 lg:gap-8">
       <section className="flex min-h-0 flex-col gap-3">
         <div className="flex items-center justify-between px-2">
-          <span className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-[#434656]">
+          <span className="text-[10px] font-extrabold tracking-[0.24em] text-[#434656]">
             Original
           </span>
-          <span className="rounded-md bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#737688] ring-1 ring-[#c3c5d9]/20">
-            README.MD
+          <span className="rounded-md bg-white px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-[#737688] ring-1 ring-[#c3c5d9]/20">
+            Readme.md
           </span>
         </div>
 

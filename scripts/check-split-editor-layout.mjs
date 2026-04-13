@@ -48,8 +48,14 @@ if (toolbar.includes("w-15")) {
 if (!toolbar.includes("flex items-center gap-1")) {
   throw new Error("Toolbar top icon buttons must use a compact gap");
 }
+if (toolbar.includes("uppercase")) {
+  throw new Error("Toolbar must not force visible labels to uppercase");
+}
 
 const splitView = readFileSync("components/SplitView.tsx", "utf8");
+if (splitView.includes("uppercase") || splitView.includes("README.MD")) {
+  throw new Error("SplitView labels must use title case, not all caps");
+}
 if (!splitView.includes("<textarea")) {
   throw new Error("SplitView must render the left raw markdown textarea");
 }
@@ -73,6 +79,9 @@ if (!splitView.includes('viewMode="preview"')) {
 }
 
 const previewPane = readFileSync("components/PreviewPane.tsx", "utf8");
+if (previewPane.includes("uppercase") || previewPane.includes("README.MD")) {
+  throw new Error("PreviewPane labels must use title case, not all caps");
+}
 if (!previewPane.includes("viewMode")) {
   throw new Error("PreviewPane must accept a viewMode prop");
 }
@@ -93,6 +102,9 @@ if (!previewPane.includes("updateParagraph") || !previewPane.includes('status: "
 }
 
 const inputArea = readFileSync("components/InputArea.tsx", "utf8");
+if (inputArea.includes("uppercase") || inputArea.includes("BUFFERS") || inputArea.includes("ACTIVE")) {
+  throw new Error("InputArea labels must use title case, not all caps");
+}
 if (inputArea.includes("<textarea")) {
   throw new Error("InputArea must no longer render a textarea");
 }
@@ -104,6 +116,27 @@ if (inputArea.includes("Upload") || inputArea.includes("Clear")) {
 }
 if (!inputArea.includes("Drop .md anywhere")) {
   throw new Error("InputArea must keep the compact import hint");
+}
+
+const statusBar = readFileSync("components/StatusBar.tsx", "utf8");
+const paragraphBlock = readFileSync("components/ParagraphBlock.tsx", "utf8");
+const engineConfig = readFileSync("components/EngineConfig.tsx", "utf8");
+const titleCaseSurfaces = `${statusBar}\n${paragraphBlock}\n${engineConfig}`;
+for (const forbidden of [
+  "uppercase",
+  "SYNC",
+  "READY",
+  "ERROR",
+  "EDIT",
+  "API Key",
+  "Base URL",
+  "Relay API",
+  "OpenAI Config",
+  "OpenAI-Compatible",
+]) {
+  if (titleCaseSurfaces.includes(forbidden)) {
+    throw new Error(`Visible labels must use title case, found ${forbidden}`);
+  }
 }
 
 console.log("split editor layout contract passed");
