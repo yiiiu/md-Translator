@@ -1,5 +1,6 @@
 "use client";
 
+import { Activity } from "lucide-react";
 import { useState } from "react";
 import { retryFailedParagraphs } from "@/services/api";
 import { useTranslationStore } from "@/stores/translation";
@@ -32,7 +33,7 @@ export default function StatusBar() {
     <section className="rounded-xl bg-[#e7eeff] p-3 ring-1 ring-[#c3c5d9]/10">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="text-[#737688]">▣</span>
+          <Activity className="h-3.5 w-3.5 text-[#737688]" strokeWidth={1.8} />
           <span className="text-[10px] font-extrabold tracking-[0.24em] text-[#434656]">
             Translation Logs
           </span>
@@ -63,8 +64,8 @@ export default function StatusBar() {
               : "Waiting for Markdown input."}
           </p>
           <p>
-            <span className="text-[#737688]/70">[translate]</span>{" "}
-            {done}/{total} translated
+            <span className="text-[#737688]/70">[translate]</span> {done}/{total}{" "}
+            translated
             {translating > 0 ? `, ${translating} in progress` : ""}
             {errors > 0 ? `, ${errors} errors` : ""}
           </p>

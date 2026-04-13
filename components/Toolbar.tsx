@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  CircleHelp as HelpIcon,
+  Eraser as ClearIcon,
+  Settings as SettingsIcon,
+  Upload as UploadIcon,
+} from "lucide-react";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { fetchEngines, startTranslation } from "@/services/api";
 import { useTranslationStore } from "@/stores/translation";
@@ -37,82 +43,6 @@ function ProviderLogo({ engineId, label }: { engineId: string; label: string }) 
     >
       {mark}
     </span>
-  );
-}
-
-function SettingsIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.8"
-    >
-      <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
-      <path d="M19.4 15a8 8 0 0 0 .1-1.2 8 8 0 0 0-.1-1.2l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2-1.2L14.7 5h-5.4L9 7.4a8 8 0 0 0-2 1.2l-2.4-1-2 3.5 2 1.5a8 8 0 0 0-.1 1.2 8 8 0 0 0 .1 1.2l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2 1.2l.3 2.4h5.4l.3-2.4a8 8 0 0 0 2-1.2l2.4 1 2-3.5-2-1.5Z" />
-    </svg>
-  );
-}
-
-function HelpIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.8"
-    >
-      <circle cx="12" cy="12" r="8.25" />
-      <path d="M9.75 9.6a2.35 2.35 0 0 1 2.35-2.1 2.25 2.25 0 0 1 2.4 2.25c0 1.25-.75 1.85-1.65 2.45-.65.45-.85.85-.85 1.55" />
-      <path d="M12 17h.01" />
-    </svg>
-  );
-}
-
-function UploadIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.8"
-    >
-      <path d="M12 15V4" />
-      <path d="m7.5 8.5 4.5-4.5 4.5 4.5" />
-      <path d="M5 14.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3.5" />
-    </svg>
-  );
-}
-
-function ClearIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-4 w-4"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.8"
-    >
-      <path d="M5 7h14" />
-      <path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7" />
-      <path d="M8 10v7M12 10v7M16 10v7" />
-      <path d="M7 7l.7 13h8.6L17 7" />
-    </svg>
   );
 }
 
@@ -231,7 +161,7 @@ export default function Toolbar() {
               aria-label="Help"
               title="Help"
             >
-              <HelpIcon />
+              <HelpIcon className="h-4 w-4" strokeWidth={1.8} />
             </button>
             <button
               type="button"
@@ -240,7 +170,7 @@ export default function Toolbar() {
               aria-label="Settings"
               title="Settings"
             >
-              <SettingsIcon />
+              <SettingsIcon className="h-4 w-4" strokeWidth={1.8} />
             </button>
             <div className="grid h-8 w-8 place-items-center rounded-full bg-[#111c2d] text-xs font-bold text-white">
               L
@@ -293,7 +223,7 @@ export default function Toolbar() {
               aria-label="Upload .md"
               title="Upload .md"
             >
-              <UploadIcon />
+              <UploadIcon className="h-4 w-4" strokeWidth={1.8} />
               <input
                 type="file"
                 accept=".md,.markdown,.txt"
@@ -309,7 +239,7 @@ export default function Toolbar() {
               aria-label="Clear"
               title="Clear"
             >
-              <ClearIcon />
+              <ClearIcon className="h-4 w-4" strokeWidth={1.8} />
             </button>
           </div>
 

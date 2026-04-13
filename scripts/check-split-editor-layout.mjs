@@ -27,8 +27,8 @@ if (toolbar.includes(">Upload .md<") || toolbar.includes(">Clear<")) {
 if (!toolbar.includes("SettingsIcon") || toolbar.includes(">Settings<")) {
   throw new Error("Toolbar settings control must be icon-only");
 }
-if (!toolbar.includes("HelpIcon") || !toolbar.includes("<HelpIcon />")) {
-  throw new Error("Toolbar help control must use an inline icon");
+if (!toolbar.includes("HelpIcon")) {
+  throw new Error("Toolbar help control must use an icon component");
 }
 if (!toolbar.includes("ProviderLogo") || toolbar.includes(">Engine<")) {
   throw new Error("Toolbar engine selector must show a provider logo instead of Engine text");
@@ -88,8 +88,8 @@ if (!previewPane.includes("viewMode")) {
 if (!previewPane.includes("Preview") || !previewPane.includes("Code")) {
   throw new Error("PreviewPane must render the Preview/Code toggle");
 }
-if (!previewPane.includes("<svg")) {
-  throw new Error("PreviewPane toggle must use inline SVG icons");
+if (!previewPane.includes('from "lucide-react"')) {
+  throw new Error("PreviewPane toggle icons must come from lucide-react");
 }
 if (!previewPane.includes('mode === "code"')) {
   throw new Error("PreviewPane must render raw code mode");

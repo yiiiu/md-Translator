@@ -1,5 +1,6 @@
 "use client";
 
+import { Code2 as CodeIcon, Eye as EyeIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { RefObject, UIEvent, UIEventHandler } from "react";
 import { type Paragraph, useTranslationStore } from "@/stores/translation";
@@ -16,39 +17,6 @@ interface Props {
 
 function formatLineNumber(index: number) {
   return String(index + 1).padStart(2, "0");
-}
-
-function EyeIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-3 w-3"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" />
-      <circle cx="12" cy="12" r="2.75" />
-    </svg>
-  );
-}
-
-function CodeIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-3 w-3"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.8"
-    >
-      <path d="m8.5 8-4 4 4 4M15.5 8l4 4-4 4" />
-    </svg>
-  );
 }
 
 export default function PreviewPane({
@@ -135,7 +103,7 @@ export default function PreviewPane({
                       : "text-[#737688] hover:text-[#003ec7]"
                   }`}
                 >
-                  <EyeIcon />
+                  <EyeIcon className="h-3 w-3" strokeWidth={1.8} />
                   Preview
                 </button>
                 <button
@@ -147,7 +115,7 @@ export default function PreviewPane({
                       : "text-[#737688] hover:text-[#003ec7]"
                   }`}
                 >
-                  <CodeIcon />
+                  <CodeIcon className="h-3 w-3" strokeWidth={1.8} />
                   Code
                 </button>
               </div>
