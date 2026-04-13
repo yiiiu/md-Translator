@@ -58,6 +58,25 @@ function SettingsIcon() {
   );
 }
 
+function HelpIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+    >
+      <circle cx="12" cy="12" r="8.25" />
+      <path d="M9.75 9.6a2.35 2.35 0 0 1 2.35-2.1 2.25 2.25 0 0 1 2.4 2.25c0 1.25-.75 1.85-1.65 2.45-.65.45-.85.85-.85 1.55" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
 function UploadIcon() {
   return (
     <svg
@@ -210,8 +229,9 @@ export default function Toolbar() {
               type="button"
               className="grid h-9 w-10 place-items-center rounded-xl text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
               aria-label="Help"
+              title="Help"
             >
-              ?
+              <HelpIcon />
             </button>
             <button
               type="button"
