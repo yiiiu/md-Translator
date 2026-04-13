@@ -18,6 +18,15 @@ if (!toolbar.includes("Upload .md") || !toolbar.includes("Clear")) {
 if (!toolbar.includes("setRawInput(markdown)") || !toolbar.includes("reset()")) {
   throw new Error("Toolbar upload/clear must write rawInput and reset state");
 }
+if (!toolbar.includes("ProviderLogo") || toolbar.includes(">Engine<")) {
+  throw new Error("Toolbar engine selector must show a provider logo instead of Engine text");
+}
+if (!toolbar.includes("engineSelectWidth")) {
+  throw new Error("Toolbar engine selector must adapt to the selected provider label");
+}
+if (!toolbar.includes("bg-[#0052ff]") || !toolbar.includes("ring-[#003ec7]/20")) {
+  throw new Error("Toolbar Upload .md and Clear buttons must be visually distinct");
+}
 
 const splitView = readFileSync("components/SplitView.tsx", "utf8");
 if (!splitView.includes("<textarea")) {

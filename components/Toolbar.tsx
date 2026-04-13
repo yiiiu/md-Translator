@@ -22,6 +22,24 @@ function isMarkdownFile(file: File) {
   return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".txt");
 }
 
+function ProviderLogo({ engineId, label }: { engineId: string; label: string }) {
+  const normalized = `${engineId} ${label}`.toLowerCase();
+  const mark = normalized.includes("openai")
+    ? "O"
+    : normalized.includes("custom")
+      ? "C"
+      : label.trim().charAt(0).toUpperCase() || "A";
+
+  return (
+    <span
+      aria-label={`${label} provider`}
+      className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#111c2d] text-[10px] font-extrabold uppercase tracking-[-0.02em] text-white shadow-sm ring-1 ring-[#0052ff]/20"
+    >
+      {mark}
+    </span>
+  );
+}
+
 export default function Toolbar() {
   const {
     engine,
@@ -38,6 +56,12 @@ export default function Toolbar() {
   const [engineOptions, setEngineOptions] = useState(DEFAULT_ENGINE_OPTIONS);
 
   const canTranslate = paragraphs.length > 0 && !translating;
+  const selectedEngine =
+    engineOptions.find((option) => option.value === engine) ?? DEFAULT_ENGINE_OPTIONS[0];
+  const engineSelectWidth = `${Math.min(
+    Math.max(selectedEngine.label.length + 2, 10),
+    30
+  )}ch`;
 
   const refreshEngineOptions = async () => {
     try {
@@ -148,14 +172,13 @@ export default function Toolbar() {
 
         <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f0f3ff] px-4 py-3 lg:px-8">
           <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#111c2d] shadow-sm ring-1 ring-[#c3c5d9]/15">
-              <span className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#003ec7]">
-                Engine
-              </span>
+            <label className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-[#111c2d] shadow-sm ring-1 ring-[#c3c5d9]/15">
+              <ProviderLogo engineId={engine} label={selectedEngine.label} />
               <select
                 value={engine}
                 onChange={(event) => setEngine(event.target.value)}
-                className="bg-transparent text-sm font-semibold outline-none"
+                style={{ width: engineSelectWidth }}
+                className="bg-transparent text-sm font-semibold outline-none transition-[width]"
                 aria-label="Translation engine"
               >
                 {engineOptions.map((option) => (
@@ -187,7 +210,7 @@ export default function Toolbar() {
               {paragraphs.length} paragraphs
             </span>
 
-            <label className="cursor-pointer rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#515f74] transition hover:bg-[#dee8ff] hover:text-[#003ec7]">
+            <label className="cursor-pointer rounded-full bg-[#0052ff] px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#003ec7]">
               Upload .md
               <input
                 type="file"
@@ -200,7 +223,7 @@ export default function Toolbar() {
             <button
               type="button"
               onClick={handleClear}
-              className="rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#515f74] transition hover:bg-[#dee8ff] hover:text-[#003ec7]"
+              className="rounded-full bg-white px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff]"
             >
               Clear
             </button>
