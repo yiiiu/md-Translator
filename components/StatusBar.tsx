@@ -29,37 +29,71 @@ export default function StatusBar() {
   }
 
   return (
-    <footer className="border-t border-stone-200 bg-white/90 px-4 py-3 backdrop-blur">
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-stone-200">
-          <div
-            className="h-full bg-blue-600 transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-3 text-xs text-stone-500">
-          <span>
-            {done}/{total} translated
+    <section className="rounded-xl bg-[#e7eeff] p-3 ring-1 ring-[#c3c5d9]/10">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-[#737688]">▣</span>
+          <span className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-[#434656]">
+            Translation Logs
           </span>
-          {translating > 0 ? <span>{translating} in progress</span> : null}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           {errors > 0 ? (
-            <>
-              <span>{errors} errors</span>
-              <button
-                type="button"
-                onClick={handleRetryFailures}
-                disabled={!canRetryFailures}
-                className="rounded-full border border-red-200 bg-red-50 px-3 py-1 font-medium text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {retryingFailures ? "重试中..." : `重试失败段落（${errors}）`}
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={handleRetryFailures}
+              disabled={!canRetryFailures}
+              className="rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#ba1a1a] shadow-sm transition hover:bg-[#ffdad6] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {retryingFailures ? "重试中..." : `重试失败段落（${errors}）`}
+            </button>
           ) : null}
-          {connectionLost ? (
-            <span className="font-medium text-red-600">Connection lost</span>
-          ) : null}
+          <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#003ec7]">
+            {connectionLost ? "Connection Lost" : "Ready"}
+          </span>
         </div>
       </div>
-    </footer>
+
+      <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div className="custom-scrollbar h-16 overflow-y-auto font-mono text-[11px] leading-5 text-[#434656]">
+          <p>
+            <span className="text-[#737688]/70">[status]</span>{" "}
+            {total > 0
+              ? `Parsed ${total} paragraph buffers.`
+              : "Waiting for Markdown input."}
+          </p>
+          <p>
+            <span className="text-[#737688]/70">[translate]</span>{" "}
+            {done}/{total} translated
+            {translating > 0 ? `, ${translating} in progress` : ""}
+            {errors > 0 ? `, ${errors} errors` : ""}
+          </p>
+          {connectionLost ? (
+            <p className="text-[#ba1a1a]">
+              <span className="text-[#737688]/70">[network]</span> Stream connection lost.
+            </p>
+          ) : (
+            <p>
+              <span className="text-[#737688]/70">[workspace]</span> Applying rendered
+              Markdown output to buffers.
+            </p>
+          )}
+        </div>
+
+        <div className="min-w-44">
+          <div className="mb-1 flex items-center justify-between text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#434656]">
+            <span>Progress</span>
+            <span>{Math.round(progress)}%</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-[#d8e3fb]">
+            <div
+              className="h-full rounded-full bg-[#003ec7] transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
+

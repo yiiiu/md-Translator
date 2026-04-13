@@ -6,10 +6,10 @@ import { useTranslationStore } from "@/stores/translation";
 import EngineConfig from "./EngineConfig";
 
 const TARGET_LANGUAGES = [
-  { value: "zh-CN", label: "简体中文" },
-  { value: "zh-TW", label: "繁體中文" },
-  { value: "ja", label: "日本語" },
-  { value: "ko", label: "한국어" },
+  { value: "zh-CN", label: "Chinese (CN)" },
+  { value: "zh-TW", label: "Chinese (TW)" },
+  { value: "ja", label: "Japanese" },
+  { value: "ko", label: "Korean" },
 ];
 
 const DEFAULT_ENGINE_OPTIONS = [
@@ -75,66 +75,91 @@ export default function Toolbar() {
 
   return (
     <>
-      <header className="border-b border-stone-200 bg-white/90 px-4 py-3 backdrop-blur">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-              MD Translator
-            </p>
-            <h1 className="text-xl font-semibold text-stone-900">
-              实时 Markdown 双栏翻译
+      <header className="z-20 bg-[#f9f9ff]">
+        <div className="flex h-14 items-center justify-between px-4 lg:px-8">
+          <div className="flex items-center gap-6">
+            <h1 className="font-headline text-lg font-extrabold tracking-tight text-[#0052ff]">
+              Lucid Editor
             </h1>
+            <nav className="hidden items-center gap-5 text-xs font-bold text-[#434656] md:flex">
+              <span className="border-b-2 border-[#003ec7] pb-1 text-[#003ec7]">
+                Projects
+              </span>
+              <span className="transition hover:text-[#003ec7]">Glossary</span>
+              <span className="transition hover:text-[#003ec7]">History</span>
+            </nav>
           </div>
 
-          <div className="flex-1" />
-
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={engine}
-              onChange={(event) => setEngine(event.target.value)}
-              className="rounded-xl border border-stone-300 bg-stone-50 px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-blue-500"
-            >
-              {engineOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={targetLang}
-              onChange={(event) => setTargetLang(event.target.value)}
-              className="rounded-xl border border-stone-300 bg-stone-50 px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-blue-500"
-            >
-              {TARGET_LANGUAGES.map((language) => (
-                <option key={language.value} value={language.value}>
-                  {language.label}
-                </option>
-              ))}
-            </select>
-
+          <div className="flex items-center gap-2">
             <button
-              onClick={handleTranslate}
-              disabled={!canTranslate}
-              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+              type="button"
+              className="grid h-9 w-9 place-items-center rounded-full text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
+              aria-label="Help"
             >
-              {translating ? "翻译中..." : "开始翻译"}
+              ?
             </button>
-
             <button
+              type="button"
               onClick={() => setShowConfig(true)}
-              className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
+              className="grid h-9 w-9 place-items-center rounded-full text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
+              aria-label="Settings"
             >
-              Settings
+              ⚙
             </button>
+            <div className="grid h-8 w-8 place-items-center rounded-full bg-[#111c2d] text-xs font-bold text-white">
+              L
+            </div>
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-stone-500">
-          <span className="rounded-full bg-stone-100 px-3 py-1 font-medium">
-            {engine.toUpperCase()}
-          </span>
-          <span>{paragraphs.length} paragraphs</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f0f3ff] px-4 py-3 lg:px-8">
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#111c2d] shadow-sm ring-1 ring-[#c3c5d9]/15">
+              <span className="text-[#003ec7]">◈</span>
+              <select
+                value={engine}
+                onChange={(event) => setEngine(event.target.value)}
+                className="bg-transparent text-sm font-semibold outline-none"
+                aria-label="Translation engine"
+              >
+                {engineOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="flex items-center gap-2 rounded-xl bg-white p-1 text-xs font-extrabold uppercase tracking-[0.18em] text-[#003ec7] shadow-sm ring-1 ring-[#c3c5d9]/15">
+              <span className="rounded-lg bg-[#d5e3fc] px-3 py-1.5">Auto</span>
+              <span className="text-[#737688]">→</span>
+              <select
+                value={targetLang}
+                onChange={(event) => setTargetLang(event.target.value)}
+                className="rounded-lg bg-transparent px-2 py-1.5 text-xs font-extrabold uppercase tracking-[0.18em] outline-none transition hover:bg-[#dee8ff]"
+                aria-label="Target language"
+              >
+                {TARGET_LANGUAGES.map((language) => (
+                  <option key={language.value} value={language.value}>
+                    {language.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#57657a]">
+              {paragraphs.length} paragraphs
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleTranslate}
+            disabled={!canTranslate}
+            className="rounded-full bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-7 py-2.5 text-sm font-bold text-white shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            {translating ? "Translating..." : "Translate"}
+          </button>
         </div>
       </header>
 
@@ -150,3 +175,4 @@ export default function Toolbar() {
     </>
   );
 }
+

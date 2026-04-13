@@ -9,6 +9,13 @@ interface Props {
   paragraph: Paragraph;
 }
 
+const statusLabels: Partial<Record<Paragraph["status"], string>> = {
+  translating: "SYNC",
+  done: "READY",
+  error: "ERROR",
+  edited: "EDIT",
+};
+
 export default function ParagraphBlock({ paragraph }: Props) {
   const content = paragraph.translated || paragraph.original;
   const engine = useTranslationStore((state) => state.engine);
@@ -30,17 +37,6 @@ export default function ParagraphBlock({ paragraph }: Props) {
     };
   }, [content]);
 
-  const icon =
-    paragraph.status === "translating"
-      ? "..."
-      : paragraph.status === "done"
-        ? "OK"
-        : paragraph.status === "error"
-          ? "ERR"
-          : paragraph.status === "edited"
-            ? "EDIT"
-          : null;
-
   async function handleRetry() {
     if (retrying) return;
 
@@ -52,28 +48,40 @@ export default function ParagraphBlock({ paragraph }: Props) {
     }
   }
 
+  const statusLabel = statusLabels[paragraph.status];
+
   return (
     <article
       data-paragraph-id={paragraph.id}
-      className={`group relative border-l-2 px-4 py-3 transition-colors ${
+      className={`group relative mx-3 my-1.5 rounded-xl px-4 py-3 transition-colors ${
         paragraph.status === "error"
-          ? "border-red-500 bg-red-50/70"
-          : "border-transparent hover:bg-stone-100/80"
+          ? "bg-[#ffdad6]/70 text-[#93000a]"
+          : paragraph.status === "translating"
+            ? "bg-[#d5e3fc]/55"
+            : "hover:bg-[#f0f3ff]"
       }`}
     >
-      <div className="pr-16 break-words text-stone-800">
+      <div className="pr-20 break-words font-mono text-sm text-[#111c2d]">
         <div
           className="markdown-rendered"
           dangerouslySetInnerHTML={{ __html: renderedContent }}
         />
       </div>
-      {icon ? (
-        <div className="absolute top-3 right-4 rounded-full border border-stone-300 bg-white px-2 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-stone-500">
-          {icon}
+
+      {statusLabel ? (
+        <div
+          className={`absolute top-3 right-4 rounded-full px-2 py-0.5 text-[9px] font-extrabold tracking-[0.18em] ${
+            paragraph.status === "error"
+              ? "bg-white text-[#ba1a1a]"
+              : "bg-[#d5e3fc] text-[#57657a]"
+          }`}
+        >
+          {statusLabel}
         </div>
       ) : null}
+
       {paragraph.status === "error" ? (
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-red-700">
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[#93000a]">
           {paragraph.errorMessage ? (
             <p className="min-w-0 flex-1">{paragraph.errorMessage}</p>
           ) : null}
@@ -82,12 +90,13 @@ export default function ParagraphBlock({ paragraph }: Props) {
             onClick={handleRetry}
             disabled={retrying}
             aria-label="Retry paragraph"
-            className="rounded-full border border-red-200 bg-white px-3 py-1 font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full bg-white px-3 py-1 font-bold text-[#ba1a1a] shadow-sm transition hover:bg-[#fff7f6] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {retrying ? "重试中..." : "🔄 重试"}
+            {retrying ? "重试中..." : "重试"}
           </button>
         </div>
       ) : null}
     </article>
   );
 }
+

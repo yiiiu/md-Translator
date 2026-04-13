@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Manrope, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
 });
 
@@ -25,9 +30,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${manrope.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="h-full overflow-hidden bg-[radial-gradient(circle_at_top,#f5f0e8,transparent_42%),linear-gradient(180deg,#f7f5f1_0%,#efeae1_100%)] text-stone-900">
+      <body className="h-full overflow-hidden bg-[#f9f9ff] text-[#111c2d]">
         {children}
       </body>
     </html>

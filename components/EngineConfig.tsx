@@ -166,19 +166,21 @@ export default function EngineConfig({ engineId, onClose }: Props) {
       role="dialog"
       aria-modal="true"
       aria-label={modalTitle}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#111c2d]/40 p-4 backdrop-blur-md"
     >
-      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-stone-200 bg-white p-6 shadow-2xl">
+      <div className="custom-scrollbar max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-[#f9f9ff] p-6 shadow-[0_32px_64px_rgba(17,28,45,0.18)] ring-1 ring-[#c3c5d9]/20">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-[#434656]">
               Engine Config
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-stone-900">{modalTitle}</h2>
+            <h2 className="font-headline mt-1 text-2xl font-extrabold tracking-tight text-[#111c2d]">
+              {modalTitle}
+            </h2>
           </div>
           <span
             className={`rounded-full px-3 py-1 text-xs font-medium ${
-              configured ? "bg-emerald-100 text-emerald-700" : "bg-stone-100 text-stone-500"
+              configured ? "bg-[#d5e3fc] text-[#003ec7]" : "bg-white text-[#737688]"
             }`}
           >
             {configured ? "Configured" : "Not configured"}
@@ -188,7 +190,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
         <div className="mt-5 space-y-4">
           {isCustomEngine ? (
             <label className="block">
-              <span className="mb-1 block text-sm font-medium text-stone-700">
+              <span className="mb-1 block text-sm font-bold text-[#434656]">
                 Provider Name
               </span>
               <input
@@ -196,49 +198,49 @@ export default function EngineConfig({ engineId, onClose }: Props) {
                 value={providerName}
                 onChange={(event) => setProviderName(event.target.value)}
                 placeholder="Relay API"
-                className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+                className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
               />
             </label>
           ) : null}
 
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-stone-700">API Key</span>
+            <span className="mb-1 block text-sm font-bold text-[#434656]">API Key</span>
             <input
               type="password"
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
               placeholder={apiKeyConfigured ? "Stored API key will be reused" : "sk-..."}
-              className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+              className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
             />
             {apiKeyConfigured ? (
-              <p className="mt-1 text-xs text-stone-500">
+              <p className="mt-1 text-xs text-[#737688]">
                 Leave blank to keep the saved API key.
               </p>
             ) : null}
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-stone-700">Model</span>
+            <span className="mb-1 block text-sm font-bold text-[#434656]">Model</span>
             <input
               type="text"
               value={model}
               onChange={(event) => setModel(event.target.value)}
               placeholder={DEFAULT_MODEL}
               list={modelListId}
-              className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+              className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
             />
             <datalist id={modelListId}>
               {models.map((item) => (
                 <option key={item.id} value={item.id} />
               ))}
             </datalist>
-            <p className="mt-1 text-xs text-stone-500">
+            <p className="mt-1 text-xs text-[#737688]">
               Model list is optional. You can always type a model manually.
             </p>
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-stone-700">
+            <span className="mb-1 block text-sm font-bold text-[#434656]">
               Base URL
             </span>
             <input
@@ -248,7 +250,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
               placeholder={
                 isCustomEngine ? "https://relay.example.com/v1" : DEFAULT_OPENAI_BASE_URL
               }
-              className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500"
+              className="w-full rounded-xl bg-white px-3 py-2 text-sm outline-none ring-1 ring-[#c3c5d9]/25 transition focus:ring-2 focus:ring-[#0052ff]/25"
             />
           </label>
 
@@ -257,7 +259,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
               type="button"
               onClick={handleFetchModels}
               disabled={!apiKey.trim() || !baseUrl.trim() || fetchingModels}
-              className="rounded-xl border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-white px-3 py-2 text-sm font-bold text-[#434656] shadow-sm transition hover:bg-[#dee8ff] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {fetchingModels ? "Fetching..." : "Fetch Models"}
             </button>
@@ -265,7 +267,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
               type="button"
               onClick={handleTestModel}
               disabled={!apiKey.trim() || !baseUrl.trim() || !model.trim() || testingModel}
-              className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-[#d5e3fc] px-3 py-2 text-sm font-bold text-[#003ec7] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               {testingModel ? "Testing..." : "Test Model"}
             </button>
@@ -275,8 +277,8 @@ export default function EngineConfig({ engineId, onClose }: Props) {
             <p
               className={`rounded-xl px-3 py-2 text-sm ${
                 statusKind === "success"
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-red-50 text-red-700"
+                  ? "bg-[#d5e3fc] text-[#003ec7]"
+                  : "bg-[#ffdad6] text-[#93000a]"
               }`}
             >
               {statusMessage}
@@ -288,7 +290,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
+            className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-[#434656] shadow-sm transition hover:bg-[#dee8ff]"
           >
             Cancel
           </button>
@@ -296,7 +298,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
             type="button"
             onClick={handleSave}
             disabled={(!apiKey.trim() && !apiKeyConfigured) || saving}
-            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+            className="rounded-xl bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-4 py-2 text-sm font-bold text-white shadow-[0_14px_28px_rgba(0,82,255,0.22)] transition hover:shadow-[0_18px_36px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
           >
             {saving ? "Saving..." : "Save"}
           </button>

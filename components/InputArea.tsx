@@ -15,7 +15,7 @@ function mapToParagraphs(markdown: string) {
 }
 
 export default function InputArea() {
-  const { setParagraphs, reset } = useTranslationStore();
+  const { setParagraphs, reset, paragraphs } = useTranslationStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -34,7 +34,8 @@ export default function InputArea() {
 
     const reader = new FileReader();
     reader.onload = (loadEvent) => {
-      const markdown = typeof loadEvent.target?.result === "string" ? loadEvent.target.result : "";
+      const markdown =
+        typeof loadEvent.target?.result === "string" ? loadEvent.target.result : "";
       if (textareaRef.current) {
         textareaRef.current.value = markdown;
       }
@@ -52,7 +53,8 @@ export default function InputArea() {
 
     const reader = new FileReader();
     reader.onload = (loadEvent) => {
-      const markdown = typeof loadEvent.target?.result === "string" ? loadEvent.target.result : "";
+      const markdown =
+        typeof loadEvent.target?.result === "string" ? loadEvent.target.result : "";
       if (textareaRef.current) {
         textareaRef.current.value = markdown;
       }
@@ -69,45 +71,66 @@ export default function InputArea() {
   };
 
   return (
-    <section className="border-t border-stone-200 bg-stone-50/90 px-4 py-4 backdrop-blur">
-      <div
-        className="grid gap-3 rounded-2xl border border-dashed border-stone-300 bg-white/90 p-3 lg:grid-cols-[1fr_auto]"
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={handleDrop}
-      >
-        <textarea
-          ref={textareaRef}
-          placeholder="粘贴 Markdown，或拖拽 .md 文件到这里"
-          className="min-h-28 w-full resize-none rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 font-mono text-sm leading-6 text-stone-800 outline-none transition focus:border-blue-500 focus:bg-white"
+    <footer
+      className="bottom-action-shell grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(12rem,18rem)] lg:items-center lg:px-8"
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={handleDrop}
+    >
+      <textarea
+        ref={textareaRef}
+        placeholder="Paste Markdown here, or drag a .md file onto this bar."
+        className="h-12 min-h-12 resize-none rounded-xl bg-white px-4 py-3 font-mono text-xs leading-5 text-[#111c2d] shadow-sm outline-none ring-1 ring-[#c3c5d9]/15 transition focus:ring-2 focus:ring-[#0052ff]/20"
+      />
+
+      <div className="flex justify-center gap-2">
+        <button
+          type="button"
+          onClick={handleParse}
+          className="flex min-w-20 flex-col items-center rounded-xl px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#515f74] transition hover:bg-white"
+        >
+          <span className="text-sm">Parse</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="flex min-w-20 flex-col items-center rounded-xl bg-[#d5e3fc] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#003ec7] transition hover:bg-white"
+        >
+          <span className="text-sm">Upload</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleClear}
+          className="flex min-w-20 flex-col items-center rounded-xl px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#515f74] transition hover:bg-white"
+        >
+          <span className="text-sm">Clear</span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".md,.markdown,.txt"
+          onChange={handleFileUpload}
+          className="hidden"
         />
-        <div className="flex flex-row gap-2 lg:flex-col">
-          <button
-            onClick={handleParse}
-            className="rounded-xl bg-stone-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-700"
-          >
-            Parse
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
-          >
-            Upload .md
-          </button>
-          <button
-            onClick={handleClear}
-            className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
-          >
-            Clear
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".md,.markdown,.txt"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-        </div>
       </div>
-    </section>
+
+      <div className="hidden items-center justify-end gap-3 lg:flex">
+        <div className="min-w-32">
+          <p className="mb-1 text-right text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#434656]">
+            {paragraphs.length} buffers
+          </p>
+          <div className="h-1.5 overflow-hidden rounded-full bg-[#d8e3fb]">
+            <div
+              className="h-full rounded-full bg-[#003ec7]"
+              style={{ width: paragraphs.length > 0 ? "36%" : "0%" }}
+            />
+          </div>
+        </div>
+        <div className="h-8 w-px bg-[#c3c5d9]/30" />
+        <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#003ec7]">
+          Active
+        </span>
+      </div>
+    </footer>
   );
 }
+

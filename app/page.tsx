@@ -5,13 +5,13 @@ import Toolbar from "@/components/Toolbar";
 
 export default function Home() {
   return (
-    <main className="flex h-screen overflow-hidden flex-col">
+    <main className="flex h-screen overflow-hidden flex-col bg-[#f9f9ff] text-[#111c2d]">
       <Toolbar />
-      <div className="flex min-h-0 flex-1 overflow-hidden py-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden bg-[#f0f3ff] px-4 py-4 lg:px-8 lg:py-6">
         <SplitView />
+        <StatusBar />
       </div>
       <InputArea />
-      <StatusBar />
     </main>
   );
 }
