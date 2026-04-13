@@ -36,6 +36,9 @@ if (!toolbar.includes("engineSelectWidth")) {
 if (!toolbar.includes("bg-[#0052ff]") || !toolbar.includes("ring-[#003ec7]/20")) {
   throw new Error("Toolbar Upload .md and Clear buttons must be visually distinct");
 }
+if (!toolbar.includes("w-11") || !toolbar.includes("rounded-xl")) {
+  throw new Error("Toolbar icon actions must use wider rounded-rectangle buttons");
+}
 
 const splitView = readFileSync("components/SplitView.tsx", "utf8");
 if (!splitView.includes("<textarea")) {

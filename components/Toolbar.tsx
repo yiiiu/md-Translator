@@ -208,7 +208,7 @@ export default function Toolbar() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="grid h-9 w-9 place-items-center rounded-full text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
+              className="grid h-9 w-15 place-items-center rounded-xl text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
               aria-label="Help"
             >
               ?
@@ -216,7 +216,7 @@ export default function Toolbar() {
             <button
               type="button"
               onClick={() => setShowConfig(true)}
-              className="grid h-9 w-9 place-items-center rounded-full text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
+              className="grid h-9 w-11 place-items-center rounded-xl text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
               aria-label="Settings"
               title="Settings"
             >
@@ -269,7 +269,7 @@ export default function Toolbar() {
             </span>
 
             <label
-              className="grid h-8 w-8 cursor-pointer place-items-center rounded-full bg-[#0052ff] text-white shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#003ec7]"
+              className="grid h-8 w-11 cursor-pointer place-items-center rounded-xl bg-[#0052ff] text-white shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#003ec7]"
               aria-label="Upload .md"
               title="Upload .md"
             >
@@ -285,7 +285,7 @@ export default function Toolbar() {
             <button
               type="button"
               onClick={handleClear}
-              className="grid h-8 w-8 place-items-center rounded-full bg-white text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff]"
+              className="grid h-8 w-11 place-items-center rounded-xl bg-white text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff]"
               aria-label="Clear"
               title="Clear"
             >
