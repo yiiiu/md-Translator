@@ -17,12 +17,14 @@ export interface Paragraph {
 }
 
 interface TranslationStore {
+  rawInput: string;
   paragraphs: Paragraph[];
   engine: string;
   targetLang: string;
   mode: "full" | "lazy";
   taskId: string | null;
   connectionLost: boolean;
+  setRawInput: (text: string) => void;
   setParagraphs: (paragraphs: Paragraph[]) => void;
   updateParagraph: (id: string, update: Partial<Paragraph>) => void;
   setEngine: (engine: string) => void;
@@ -34,6 +36,7 @@ interface TranslationStore {
 }
 
 const initialState = {
+  rawInput: "",
   paragraphs: [],
   engine: "openai",
   targetLang: "zh-CN",
@@ -44,6 +47,7 @@ const initialState = {
 
 export const useTranslationStore = create<TranslationStore>((set) => ({
   ...initialState,
+  setRawInput: (rawInput) => set({ rawInput }),
   setParagraphs: (paragraphs) => set({ paragraphs }),
   updateParagraph: (id, update) =>
     set((state) => ({

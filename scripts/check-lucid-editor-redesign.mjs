@@ -25,8 +25,11 @@ const inputArea = readFileSync("components/InputArea.tsx", "utf8");
 if (!inputArea.includes("bottom-action-shell")) {
   throw new Error("InputArea must become the bottom action shell");
 }
-if (!inputArea.includes("Parse") || !inputArea.includes("Upload") || !inputArea.includes("Clear")) {
-  throw new Error("Bottom action shell must preserve Parse, Upload, and Clear actions");
+if (inputArea.includes("Parse")) {
+  throw new Error("Bottom action shell must not include the old Parse action");
+}
+if (!inputArea.includes("Upload") || !inputArea.includes("Clear")) {
+  throw new Error("Bottom action shell must preserve Upload and Clear actions");
 }
 
 const statusBar = readFileSync("components/StatusBar.tsx", "utf8");
@@ -43,4 +46,3 @@ if (!globals.includes("--surface-container-low")) {
 }
 
 console.log("lucid editor redesign contract passed");
-
