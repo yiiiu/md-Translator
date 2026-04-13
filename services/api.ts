@@ -71,6 +71,40 @@ interface EngineConfigRequest {
   name?: string;
 }
 
+export interface GlossaryTermResponse {
+  id: number;
+  source_term: string;
+  target_term: string;
+  source_lang: string;
+  target_lang: string;
+  note: string;
+  enabled: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GlossaryListResponse {
+  terms: GlossaryTermResponse[];
+  source_languages: string[];
+  target_languages: string[];
+  error?: string;
+}
+
+export interface GlossaryMutationResponse {
+  ok?: boolean;
+  term?: GlossaryTermResponse;
+  error?: string;
+}
+
+export interface GlossaryTermRequest {
+  source_term: string;
+  target_term: string;
+  source_lang: string;
+  target_lang: string;
+  note?: string;
+  enabled?: boolean;
+}
+
 const RETRY_FAILED_CONCURRENCY = 4;
 
 export async function startTranslation(
@@ -318,4 +352,56 @@ export async function testEngineModel(
   });
 
   return (await response.json()) as EngineTestResponse;
+}
+
+export async function fetchGlossaryTerms(filters?: {
+  q?: string;
+  enabled?: string;
+  source_lang?: string;
+  target_lang?: string;
+}): Promise<GlossaryListResponse> {
+  const searchParams = new URLSearchParams();
+  if (filters?.q) searchParams.set("q", filters.q);
+  if (filters?.enabled) searchParams.set("enabled", filters.enabled);
+  if (filters?.source_lang) searchParams.set("source_lang", filters.source_lang);
+  if (filters?.target_lang) searchParams.set("target_lang", filters.target_lang);
+
+  const query = searchParams.toString();
+  const response = await fetch(`/api/glossary${query ? `?${query}` : ""}`);
+  return (await response.json()) as GlossaryListResponse;
+}
+
+export async function createGlossaryTerm(
+  payload: GlossaryTermRequest
+): Promise<GlossaryMutationResponse> {
+  const response = await fetch("/api/glossary", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  return (await response.json()) as GlossaryMutationResponse;
+}
+
+export async function updateGlossaryTerm(
+  id: number,
+  payload: Partial<GlossaryTermRequest>
+): Promise<GlossaryMutationResponse> {
+  const response = await fetch(`/api/glossary/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  return (await response.json()) as GlossaryMutationResponse;
+}
+
+export async function deleteGlossaryTerm(
+  id: number
+): Promise<{ ok?: boolean; error?: string }> {
+  const response = await fetch(`/api/glossary/${id}`, {
+    method: "DELETE",
+  });
+
+  return (await response.json()) as { ok?: boolean; error?: string };
 }

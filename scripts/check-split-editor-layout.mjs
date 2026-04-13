@@ -12,6 +12,7 @@ if (!store.includes("reset: () => set(initialState)")) {
 }
 
 const toolbar = readFileSync("components/Toolbar.tsx", "utf8");
+const appHeader = readFileSync("components/AppHeader.tsx", "utf8");
 if (!toolbar.includes('aria-label="Upload .md"') || !toolbar.includes('aria-label="Clear"')) {
   throw new Error("Toolbar must own accessible Upload .md and Clear actions");
 }
@@ -24,11 +25,11 @@ if (!toolbar.includes("UploadIcon") || !toolbar.includes("ClearIcon")) {
 if (toolbar.includes(">Upload .md<") || toolbar.includes(">Clear<")) {
   throw new Error("Toolbar Upload .md and Clear controls must not render text labels");
 }
-if (!toolbar.includes("SettingsIcon") || toolbar.includes(">Settings<")) {
-  throw new Error("Toolbar settings control must be icon-only");
+if (!appHeader.includes("SettingsIcon") || appHeader.includes(">Settings<")) {
+  throw new Error("AppHeader settings control must be icon-only");
 }
-if (!toolbar.includes("HelpIcon")) {
-  throw new Error("Toolbar help control must use an icon component");
+if (!appHeader.includes("HelpIcon")) {
+  throw new Error("AppHeader help control must use an icon component");
 }
 if (!toolbar.includes("ProviderLogo") || toolbar.includes(">Engine<")) {
   throw new Error("Toolbar engine selector must show a provider logo instead of Engine text");
@@ -42,11 +43,8 @@ if (!toolbar.includes("bg-[#0052ff]") || !toolbar.includes("ring-[#003ec7]/20"))
 if (!toolbar.includes("w-11") || !toolbar.includes("rounded-xl")) {
   throw new Error("Toolbar icon actions must use wider rounded-rectangle buttons");
 }
-if (toolbar.includes("w-15")) {
-  throw new Error("Toolbar top icon buttons must not be overly wide");
-}
-if (!toolbar.includes("flex items-center gap-1")) {
-  throw new Error("Toolbar top icon buttons must use a compact gap");
+if (!appHeader.includes("flex items-center gap-1")) {
+  throw new Error("AppHeader top icon buttons must use a compact gap");
 }
 if (toolbar.includes("uppercase")) {
   throw new Error("Toolbar must not force visible labels to uppercase");

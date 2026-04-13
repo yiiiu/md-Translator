@@ -1,10 +1,8 @@
 "use client";
 
 import {
-  CircleHelp as HelpIcon,
   Eraser as ClearIcon,
   Plus as PlusIcon,
-  Settings as SettingsIcon,
   Upload as UploadIcon,
 } from "lucide-react";
 import { SiOpenai } from "react-icons/si";
@@ -95,7 +93,17 @@ function ProviderLogo({
   );
 }
 
-export default function Toolbar() {
+interface ToolbarProps {
+  showConfig: boolean;
+  onOpenConfig: () => void;
+  onCloseConfig: () => void;
+}
+
+export default function Toolbar({
+  showConfig,
+  onOpenConfig,
+  onCloseConfig,
+}: ToolbarProps) {
   const {
     engine,
     targetLang,
@@ -108,7 +116,6 @@ export default function Toolbar() {
   } = useTranslationStore();
   const [translating, setTranslating] = useState(false);
   const [creatingProvider, setCreatingProvider] = useState(false);
-  const [showConfig, setShowConfig] = useState(false);
   const [engineOptions, setEngineOptions] = useState(DEFAULT_ENGINE_OPTIONS);
 
   const canTranslate = paragraphs.length > 0 && !translating;
@@ -209,7 +216,7 @@ export default function Toolbar() {
 
       await refreshEngineOptions();
       setEngine(created.id);
-      setShowConfig(true);
+      onOpenConfig();
     } catch (error) {
       console.error("Failed to create provider:", error);
     } finally {
@@ -246,149 +253,109 @@ export default function Toolbar() {
 
   return (
     <>
-      <header className="z-20 bg-[#f9f9ff]">
-        <div className="flex h-14 items-center justify-between px-4 lg:px-8">
-          <div className="flex items-center gap-6">
-            <h1 className="font-headline text-lg font-extrabold tracking-tight text-[#0052ff]">
-              Lucid Editor
-            </h1>
-            <nav className="hidden items-center gap-5 text-xs font-bold text-[#434656] md:flex">
-              <span className="border-b-2 border-[#003ec7] pb-1 text-[#003ec7]">
-                Projects
-              </span>
-              <span className="transition hover:text-[#003ec7]">Glossary</span>
-              <span className="transition hover:text-[#003ec7]">History</span>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className="grid h-9 w-10 place-items-center rounded-xl text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
-              aria-label="Help"
-              title="Help"
-            >
-              <HelpIcon className="h-4 w-4" strokeWidth={1.8} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowConfig(true)}
-              className="grid h-9 w-10 place-items-center rounded-xl text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
-              aria-label="Settings"
-              title="Settings"
-            >
-              <SettingsIcon className="h-4 w-4" strokeWidth={1.8} />
-            </button>
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-[#111c2d] text-xs font-bold text-white">
-              L
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f0f3ff] px-4 py-3 lg:px-8">
-          <div className="flex flex-wrap items-center gap-3">
-            <AppSelect
-              value={engine}
-              onValueChange={setEngine}
-              options={engineOptions}
-              ariaLabel="Translation engine"
-              leading={
-                <ProviderLogo
-                  engineId={engine}
-                  label={selectedEngine.label}
-                  baseUrl={selectedEngine.baseUrl}
-                />
-              }
-              renderOptionLeading={(option: AppSelectOption) => (
-                <ProviderLogo
-                  engineId={option.value}
-                  label={option.label}
-                  baseUrl={option.baseUrl}
-                />
-              )}
-              width={engineSelectWidth}
-              triggerClassName="px-3 py-2 text-sm font-semibold"
-            />
-
-            <button
-              type="button"
-              onClick={handleCreateProvider}
-              disabled={creatingProvider}
-              className="grid h-8 w-11 place-items-center rounded-xl bg-white text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff] disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Add provider"
-              title="Add provider"
-            >
-              <PlusIcon className="h-4 w-4" strokeWidth={1.8} />
-            </button>
-
-            <AppSelect
-              value={targetLang}
-              onValueChange={setTargetLang}
-              options={TARGET_LANGUAGES}
-              ariaLabel="Target language"
-              prefix={
-                <>
-                  <span className="rounded-lg bg-[#d5e3fc] px-3 py-1.5 text-[#003ec7]">
-                    Auto
-                  </span>
-                  <span className="text-[#737688]">to</span>
-                </>
-              }
-              triggerClassName="p-1 text-xs font-extrabold tracking-[0.18em] text-[#003ec7]"
-            />
-
-            <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
-              {paragraphs.length} paragraphs
-            </span>
-
-            <label
-              className="grid h-8 w-11 cursor-pointer place-items-center rounded-xl bg-[#0052ff] text-white shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#003ec7]"
-              aria-label="Upload .md"
-              title="Upload .md"
-            >
-              <UploadIcon className="h-4 w-4" strokeWidth={1.8} />
-              <input
-                type="file"
-                accept=".md,.markdown,.txt"
-                onChange={handleFileUpload}
-                className="hidden"
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f0f3ff] px-4 py-3 lg:px-8">
+        <div className="flex flex-wrap items-center gap-3">
+          <AppSelect
+            value={engine}
+            onValueChange={setEngine}
+            options={engineOptions}
+            ariaLabel="Translation engine"
+            leading={
+              <ProviderLogo
+                engineId={engine}
+                label={selectedEngine.label}
+                baseUrl={selectedEngine.baseUrl}
               />
-            </label>
-
-            <button
-              type="button"
-              onClick={handleClear}
-              className="grid h-8 w-11 place-items-center rounded-xl bg-white text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff]"
-              aria-label="Clear"
-              title="Clear"
-            >
-              <ClearIcon className="h-4 w-4" strokeWidth={1.8} />
-            </button>
-          </div>
+            }
+            renderOptionLeading={(option: AppSelectOption) => (
+              <ProviderLogo
+                engineId={option.value}
+                label={option.label}
+                baseUrl={option.baseUrl}
+              />
+            )}
+            width={engineSelectWidth}
+            triggerClassName="px-3 py-2 text-sm font-semibold"
+          />
 
           <button
             type="button"
-            onClick={handleTranslate}
-            disabled={!canTranslate}
-            className="rounded-full bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-7 py-2.5 text-sm font-bold text-white shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
+            onClick={handleCreateProvider}
+            disabled={creatingProvider}
+            className="grid h-8 w-11 place-items-center rounded-xl bg-white text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff] disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Add provider"
+            title="Add provider"
           >
-            {translating ? "Translating..." : "Translate"}
+            <PlusIcon className="h-4 w-4" strokeWidth={1.8} />
+          </button>
+
+          <AppSelect
+            value={targetLang}
+            onValueChange={setTargetLang}
+            options={TARGET_LANGUAGES}
+            ariaLabel="Target language"
+            prefix={
+              <>
+                <span className="rounded-lg bg-[#d5e3fc] px-3 py-1.5 text-[#003ec7]">
+                  Auto
+                </span>
+                <span className="text-[#737688]">to</span>
+              </>
+            }
+            triggerClassName="p-1 text-xs font-extrabold tracking-[0.18em] text-[#003ec7]"
+          />
+
+          <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
+            {paragraphs.length} paragraphs
+          </span>
+
+          <label
+            className="grid h-8 w-11 cursor-pointer place-items-center rounded-xl bg-[#0052ff] text-white shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#003ec7]"
+            aria-label="Upload .md"
+            title="Upload .md"
+          >
+            <UploadIcon className="h-4 w-4" strokeWidth={1.8} />
+            <input
+              type="file"
+              accept=".md,.markdown,.txt"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={handleClear}
+            className="grid h-8 w-11 place-items-center rounded-xl bg-white text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff]"
+            aria-label="Clear"
+            title="Clear"
+          >
+            <ClearIcon className="h-4 w-4" strokeWidth={1.8} />
           </button>
         </div>
-      </header>
+
+        <button
+          type="button"
+          onClick={handleTranslate}
+          disabled={!canTranslate}
+          className="rounded-full bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-7 py-2.5 text-sm font-bold text-white shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
+        >
+          {translating ? "Translating..." : "Translate"}
+        </button>
+      </div>
 
       {showConfig ? (
         <EngineConfig
           engineId={engine}
           onClose={() => {
-            setShowConfig(false);
+            onCloseConfig();
           }}
           onSaved={() => {
-            setShowConfig(false);
+            onCloseConfig();
             void refreshEngineOptions();
           }}
           onDeleteProvider={(deletedId) => {
-            setShowConfig(false);
+            onCloseConfig();
             if (useTranslationStore.getState().engine === deletedId) {
               setEngine("openai");
             }
