@@ -10,6 +10,7 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import { fetchEngines, startTranslation } from "@/services/api";
 import { useTranslationStore } from "@/stores/translation";
 import EngineConfig from "./EngineConfig";
+import AppSelect from "./ui/AppSelect";
 
 const TARGET_LANGUAGES = [
   { value: "zh-CN", label: "Chinese (Cn)" },
@@ -180,39 +181,31 @@ export default function Toolbar() {
 
         <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f0f3ff] px-4 py-3 lg:px-8">
           <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-[#111c2d] shadow-sm ring-1 ring-[#c3c5d9]/15">
-              <ProviderLogo engineId={engine} label={selectedEngine.label} />
-              <select
-                value={engine}
-                onChange={(event) => setEngine(event.target.value)}
-                style={{ width: engineSelectWidth }}
-                className="bg-transparent text-sm font-semibold outline-none transition-[width]"
-                aria-label="Translation engine"
-              >
-                {engineOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <AppSelect
+              value={engine}
+              onValueChange={setEngine}
+              options={engineOptions}
+              ariaLabel="Translation engine"
+              leading={<ProviderLogo engineId={engine} label={selectedEngine.label} />}
+              width={engineSelectWidth}
+              triggerClassName="px-3 py-2 text-sm font-semibold"
+            />
 
-            <div className="flex items-center gap-2 rounded-xl bg-white p-1 text-xs font-extrabold tracking-[0.18em] text-[#003ec7] shadow-sm ring-1 ring-[#c3c5d9]/15">
-              <span className="rounded-lg bg-[#d5e3fc] px-3 py-1.5">Auto</span>
-              <span className="text-[#737688]">to</span>
-              <select
-                value={targetLang}
-                onChange={(event) => setTargetLang(event.target.value)}
-                className="rounded-lg bg-transparent px-2 py-1.5 text-xs font-extrabold tracking-[0.18em] outline-none transition hover:bg-[#dee8ff]"
-                aria-label="Target language"
-              >
-                {TARGET_LANGUAGES.map((language) => (
-                  <option key={language.value} value={language.value}>
-                    {language.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <AppSelect
+              value={targetLang}
+              onValueChange={setTargetLang}
+              options={TARGET_LANGUAGES}
+              ariaLabel="Target language"
+              prefix={
+                <>
+                  <span className="rounded-lg bg-[#d5e3fc] px-3 py-1.5 text-[#003ec7]">
+                    Auto
+                  </span>
+                  <span className="text-[#737688]">to</span>
+                </>
+              }
+              triggerClassName="p-1 text-xs font-extrabold tracking-[0.18em] text-[#003ec7]"
+            />
 
             <span className="rounded-full bg-[#d5e3fc] px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-[#57657a]">
               {paragraphs.length} paragraphs
