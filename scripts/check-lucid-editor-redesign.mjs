@@ -35,9 +35,13 @@ if (!inputArea.includes("Drop .md anywhere")) {
   throw new Error("Bottom action shell must keep the compact import hint");
 }
 
-const toolbarUploadClear = toolbar.includes("Upload .md") && toolbar.includes("Clear");
+const toolbarUploadClear =
+  toolbar.includes('aria-label="Upload .md"') && toolbar.includes('aria-label="Clear"');
 if (!toolbarUploadClear) {
   throw new Error("Toolbar must preserve Upload .md and Clear actions");
+}
+if (toolbar.includes(">Upload .md<") || toolbar.includes(">Clear<")) {
+  throw new Error("Toolbar Upload .md and Clear actions must be icon-only");
 }
 
 const statusBar = readFileSync("components/StatusBar.tsx", "utf8");

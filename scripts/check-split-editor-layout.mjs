@@ -12,11 +12,20 @@ if (!store.includes("reset: () => set(initialState)")) {
 }
 
 const toolbar = readFileSync("components/Toolbar.tsx", "utf8");
-if (!toolbar.includes("Upload .md") || !toolbar.includes("Clear")) {
-  throw new Error("Toolbar must own Upload .md and Clear actions");
+if (!toolbar.includes('aria-label="Upload .md"') || !toolbar.includes('aria-label="Clear"')) {
+  throw new Error("Toolbar must own accessible Upload .md and Clear actions");
 }
 if (!toolbar.includes("setRawInput(markdown)") || !toolbar.includes("reset()")) {
   throw new Error("Toolbar upload/clear must write rawInput and reset state");
+}
+if (!toolbar.includes("UploadIcon") || !toolbar.includes("ClearIcon")) {
+  throw new Error("Toolbar Upload .md and Clear controls must be icon-only");
+}
+if (toolbar.includes(">Upload .md<") || toolbar.includes(">Clear<")) {
+  throw new Error("Toolbar Upload .md and Clear controls must not render text labels");
+}
+if (!toolbar.includes("SettingsIcon") || toolbar.includes(">Settings<")) {
+  throw new Error("Toolbar settings control must be icon-only");
 }
 if (!toolbar.includes("ProviderLogo") || toolbar.includes(">Engine<")) {
   throw new Error("Toolbar engine selector must show a provider logo instead of Engine text");

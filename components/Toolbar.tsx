@@ -40,6 +40,63 @@ function ProviderLogo({ engineId, label }: { engineId: string; label: string }) 
   );
 }
 
+function SettingsIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+    >
+      <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
+      <path d="M19.4 15a8 8 0 0 0 .1-1.2 8 8 0 0 0-.1-1.2l2-1.5-2-3.5-2.4 1a8 8 0 0 0-2-1.2L14.7 5h-5.4L9 7.4a8 8 0 0 0-2 1.2l-2.4-1-2 3.5 2 1.5a8 8 0 0 0-.1 1.2 8 8 0 0 0 .1 1.2l-2 1.5 2 3.5 2.4-1a8 8 0 0 0 2 1.2l.3 2.4h5.4l.3-2.4a8 8 0 0 0 2-1.2l2.4 1 2-3.5-2-1.5Z" />
+    </svg>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+    >
+      <path d="M12 15V4" />
+      <path d="m7.5 8.5 4.5-4.5 4.5 4.5" />
+      <path d="M5 14.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3.5" />
+    </svg>
+  );
+}
+
+function ClearIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.8"
+    >
+      <path d="M5 7h14" />
+      <path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7" />
+      <path d="M8 10v7M12 10v7M16 10v7" />
+      <path d="M7 7l.7 13h8.6L17 7" />
+    </svg>
+  );
+}
+
 export default function Toolbar() {
   const {
     engine,
@@ -159,10 +216,11 @@ export default function Toolbar() {
             <button
               type="button"
               onClick={() => setShowConfig(true)}
-              className="rounded-full px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
+              className="grid h-9 w-9 place-items-center rounded-full text-[#434656] transition hover:bg-[#f0f3ff] hover:text-[#003ec7]"
               aria-label="Settings"
+              title="Settings"
             >
-              Settings
+              <SettingsIcon />
             </button>
             <div className="grid h-8 w-8 place-items-center rounded-full bg-[#111c2d] text-xs font-bold text-white">
               L
@@ -210,8 +268,12 @@ export default function Toolbar() {
               {paragraphs.length} paragraphs
             </span>
 
-            <label className="cursor-pointer rounded-full bg-[#0052ff] px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#003ec7]">
-              Upload .md
+            <label
+              className="grid h-8 w-8 cursor-pointer place-items-center rounded-full bg-[#0052ff] text-white shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#003ec7]"
+              aria-label="Upload .md"
+              title="Upload .md"
+            >
+              <UploadIcon />
               <input
                 type="file"
                 accept=".md,.markdown,.txt"
@@ -223,9 +285,11 @@ export default function Toolbar() {
             <button
               type="button"
               onClick={handleClear}
-              className="rounded-full bg-white px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff]"
+              className="grid h-8 w-8 place-items-center rounded-full bg-white text-[#003ec7] shadow-sm ring-1 ring-[#003ec7]/20 transition hover:bg-[#dee8ff]"
+              aria-label="Clear"
+              title="Clear"
             >
-              Clear
+              <ClearIcon />
             </button>
           </div>
 

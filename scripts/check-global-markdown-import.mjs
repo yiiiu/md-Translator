@@ -25,7 +25,7 @@ if (!inputArea.includes("setRawInput")) {
 }
 
 const toolbar = readFileSync("components/Toolbar.tsx", "utf8");
-if (!toolbar.includes("Upload .md")) {
+if (!toolbar.includes('aria-label="Upload .md"') || !toolbar.includes("UploadIcon")) {
   throw new Error("Upload button must remain available in Toolbar");
 }
 
