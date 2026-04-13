@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { renderMarkdown } from "@/lib/markdown-renderer";
-import { type Paragraph } from "@/stores/translation";
+import { retryParagraph } from "@/services/api";
+import { type Paragraph, useTranslationStore } from "@/stores/translation";
 
 interface Props {
   paragraph: Paragraph;
@@ -10,7 +11,10 @@ interface Props {
 
 export default function ParagraphBlock({ paragraph }: Props) {
   const content = paragraph.translated || paragraph.original;
+  const engine = useTranslationStore((state) => state.engine);
+  const targetLang = useTranslationStore((state) => state.targetLang);
   const [renderedContent, setRenderedContent] = useState("");
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -35,7 +39,18 @@ export default function ParagraphBlock({ paragraph }: Props) {
           ? "ERR"
           : paragraph.status === "edited"
             ? "EDIT"
-            : null;
+          : null;
+
+  async function handleRetry() {
+    if (retrying) return;
+
+    setRetrying(true);
+    try {
+      await retryParagraph(paragraph, engine, targetLang);
+    } finally {
+      setRetrying(false);
+    }
+  }
 
   return (
     <article
@@ -57,8 +72,21 @@ export default function ParagraphBlock({ paragraph }: Props) {
           {icon}
         </div>
       ) : null}
-      {paragraph.status === "error" && paragraph.errorMessage ? (
-        <p className="mt-2 text-xs text-red-600">{paragraph.errorMessage}</p>
+      {paragraph.status === "error" ? (
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-red-700">
+          {paragraph.errorMessage ? (
+            <p className="min-w-0 flex-1">{paragraph.errorMessage}</p>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleRetry}
+            disabled={retrying}
+            aria-label="Retry paragraph"
+            className="rounded-full border border-red-200 bg-white px-3 py-1 font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {retrying ? "重试中..." : "🔄 重试"}
+          </button>
+        </div>
       ) : null}
     </article>
   );

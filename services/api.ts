@@ -20,6 +20,12 @@ interface TranslateEvent {
   type?: "complete" | "error";
 }
 
+interface ParagraphRetryResponse {
+  paragraph_id?: string;
+  translated?: string;
+  error?: string;
+}
+
 interface ApiErrorResponse {
   error?: string;
 }
@@ -151,6 +157,52 @@ export async function startTranslation(
     if (!(error instanceof DOMException && error.name === "AbortError")) {
       store.setConnectionLost(true);
     }
+    throw error;
+  }
+}
+
+export async function retryParagraph(
+  paragraph: Paragraph,
+  engine: string,
+  targetLang: string
+): Promise<void> {
+  const store = useTranslationStore.getState();
+
+  store.updateParagraph(paragraph.id, {
+    status: "translating",
+    errorMessage: undefined,
+  });
+
+  try {
+    const response = await fetch("/api/paragraph", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        engine,
+        target_lang: targetLang,
+        paragraph_id: paragraph.id,
+        content: paragraph.original,
+        type: paragraph.type,
+      }),
+    });
+
+    const result = (await response.json()) as ParagraphRetryResponse;
+
+    if (!response.ok || typeof result.translated !== "string") {
+      throw new Error(result.error || `Paragraph retry failed: ${response.status}`);
+    }
+
+    store.updateParagraph(paragraph.id, {
+      status: "done",
+      translated: result.translated,
+      errorMessage: undefined,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    store.updateParagraph(paragraph.id, {
+      status: "error",
+      errorMessage: message,
+    });
     throw error;
   }
 }
