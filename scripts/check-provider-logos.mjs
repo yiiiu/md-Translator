@@ -30,4 +30,8 @@ if (!toolbar.includes("SiOpenai") || !toolbar.includes("logoUrl") || !toolbar.in
   throw new Error("Toolbar must render real provider logos and custom logo URLs");
 }
 
+if (!toolbar.includes('engineId === "openai"')) {
+  throw new Error("Only the built-in openai engine should render the OpenAI logo by default");
+}
+
 console.log("provider logos contract passed");

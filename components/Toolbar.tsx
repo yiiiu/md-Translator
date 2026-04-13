@@ -40,9 +40,8 @@ function ProviderLogo({
   logoUrl?: string;
 }) {
   const normalized = `${engineId} ${label}`.toLowerCase();
-  const mark = normalized.includes("openai")
-    ? "O"
-    : normalized.includes("custom")
+  const isOpenAI = engineId === "openai";
+  const mark = normalized.includes("custom")
       ? "C"
       : label.trim().charAt(0).toUpperCase() || "A";
 
@@ -57,7 +56,7 @@ function ProviderLogo({
           className="h-4 w-4 rounded-sm bg-contain bg-center bg-no-repeat"
           style={{ backgroundImage: `url("${logoUrl}")` }}
         />
-      ) : normalized.includes("openai") ? (
+      ) : isOpenAI ? (
         <SiOpenai className="h-3.5 w-3.5" title="" />
       ) : (
         mark
