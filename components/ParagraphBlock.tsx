@@ -11,7 +11,6 @@ interface Props {
 
 const statusLabels: Partial<Record<Paragraph["status"], string>> = {
   translating: "Sync",
-  done: "Ready",
   error: "Error",
   edited: "Edit",
 };
