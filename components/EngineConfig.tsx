@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   configureEngine,
+  fetchEngineConfig,
   fetchEngineModels,
-  fetchEngines,
   testEngineModel,
 } from "@/services/api";
 
@@ -27,6 +27,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
   const [baseUrl, setBaseUrl] = useState(defaultBaseUrlFor(engineId));
   const [models, setModels] = useState<Array<{ id: string }>>([]);
   const [configured, setConfigured] = useState(false);
+  const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
   const [saving, setSaving] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(false);
   const [testingModel, setTestingModel] = useState(false);
@@ -43,6 +44,8 @@ export default function EngineConfig({ engineId, onClose }: Props) {
     setBaseUrl(defaultBaseUrlFor(engineId));
     setModels([]);
     setProviderName("");
+    setConfigured(false);
+    setApiKeyConfigured(false);
     setStatusKind("idle");
     setStatusMessage(null);
   }, [engineId]);
@@ -50,12 +53,20 @@ export default function EngineConfig({ engineId, onClose }: Props) {
   useEffect(() => {
     let active = true;
 
-    void fetchEngines().then((data) => {
+    void fetchEngineConfig(engineId).then((config) => {
       if (!active) return;
-      const current = data.engines?.find((engine) => engine.id === engineId);
-      setConfigured(current?.configured ?? false);
+      if (config.error) {
+        setConfigured(false);
+        setApiKeyConfigured(false);
+        return;
+      }
+
+      setConfigured(config.configured);
+      setApiKeyConfigured(config.api_key_configured);
+      setModel(config.model || DEFAULT_MODEL);
+      setBaseUrl(config.base_url || defaultBaseUrlFor(engineId));
       if (isCustomEngine) {
-        setProviderName(current?.name ?? "");
+        setProviderName(config.name || "");
       }
     });
 
@@ -122,13 +133,14 @@ export default function EngineConfig({ engineId, onClose }: Props) {
   };
 
   const handleSave = async () => {
-    if (!apiKey.trim()) return;
+    const nextApiKey = apiKey.trim();
+    if (!nextApiKey && !apiKeyConfigured) return;
 
     setSaving(true);
     setStatus("idle", null);
     try {
       const result = await configureEngine(engineId, {
-        api_key: apiKey,
+        api_key: nextApiKey || undefined,
         model: model || undefined,
         base_url: baseUrl || undefined,
         name: isCustomEngine ? providerName || undefined : undefined,
@@ -140,6 +152,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
       }
 
       setConfigured(true);
+      setApiKeyConfigured(true);
       onClose();
     } catch (error) {
       setStatus("error", error instanceof Error ? error.message : "Failed to save config");
@@ -194,9 +207,14 @@ export default function EngineConfig({ engineId, onClose }: Props) {
               type="password"
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
-              placeholder="sk-..."
+              placeholder={apiKeyConfigured ? "Stored API key will be reused" : "sk-..."}
               className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500"
             />
+            {apiKeyConfigured ? (
+              <p className="mt-1 text-xs text-stone-500">
+                Leave blank to keep the saved API key.
+              </p>
+            ) : null}
           </label>
 
           <label className="block">
@@ -277,7 +295,7 @@ export default function EngineConfig({ engineId, onClose }: Props) {
           <button
             type="button"
             onClick={handleSave}
-            disabled={!apiKey.trim() || saving}
+            disabled={(!apiKey.trim() && !apiKeyConfigured) || saving}
             className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
           >
             {saving ? "Saving..." : "Save"}

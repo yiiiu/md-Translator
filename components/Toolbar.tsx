@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { startTranslation } from "@/services/api";
+import { useEffect, useState } from "react";
+import { fetchEngines, startTranslation } from "@/services/api";
 import { useTranslationStore } from "@/stores/translation";
 import EngineConfig from "./EngineConfig";
 
@@ -12,7 +12,7 @@ const TARGET_LANGUAGES = [
   { value: "ko", label: "한국어" },
 ];
 
-const ENGINE_OPTIONS = [
+const DEFAULT_ENGINE_OPTIONS = [
   { value: "openai", label: "OpenAI" },
   { value: "custom-openai", label: "Custom OpenAI-Compatible" },
 ];
@@ -22,8 +22,29 @@ export default function Toolbar() {
     useTranslationStore();
   const [translating, setTranslating] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
+  const [engineOptions, setEngineOptions] = useState(DEFAULT_ENGINE_OPTIONS);
 
   const canTranslate = paragraphs.length > 0 && !translating;
+
+  const refreshEngineOptions = async () => {
+    try {
+      const data = await fetchEngines();
+      if (!data.engines?.length) return;
+
+      setEngineOptions(
+        data.engines.map((item) => ({
+          value: item.id,
+          label: item.name,
+        }))
+      );
+    } catch (error) {
+      console.error("Failed to load engines:", error);
+    }
+  };
+
+  useEffect(() => {
+    void refreshEngineOptions();
+  }, []);
 
   const handleTranslate = async () => {
     if (!canTranslate) return;
@@ -73,7 +94,7 @@ export default function Toolbar() {
               onChange={(event) => setEngine(event.target.value)}
               className="rounded-xl border border-stone-300 bg-stone-50 px-3 py-2 text-sm text-stone-700 outline-none transition focus:border-blue-500"
             >
-              {ENGINE_OPTIONS.map((option) => (
+              {engineOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -118,7 +139,13 @@ export default function Toolbar() {
       </header>
 
       {showConfig ? (
-        <EngineConfig engineId={engine} onClose={() => setShowConfig(false)} />
+        <EngineConfig
+          engineId={engine}
+          onClose={() => {
+            setShowConfig(false);
+            void refreshEngineOptions();
+          }}
+        />
       ) : null}
     </>
   );

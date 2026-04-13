@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { upsertEngineConfig } from "@/lib/db";
+import { getEngineConfig, upsertEngineConfig } from "@/lib/db";
 
 const ENGINE_DEFAULT_NAMES: Record<string, string> = {
   openai: "OpenAI",
@@ -14,6 +14,34 @@ function normalizeString(value: unknown) {
   return value.trim();
 }
 
+function isSupportedEngine(id: string) {
+  return Boolean(ENGINE_DEFAULT_NAMES[id]);
+}
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  if (!isSupportedEngine(id)) {
+    return NextResponse.json({ error: "Unsupported engine" }, { status: 400 });
+  }
+
+  const config = getEngineConfig(id);
+  const apiKey = normalizeString(config?.api_key);
+  const baseUrl = normalizeString(config?.base_url);
+
+  return NextResponse.json({
+    id,
+    name: config?.name || ENGINE_DEFAULT_NAMES[id],
+    configured: Boolean(apiKey && (baseUrl || id === "openai")),
+    api_key_configured: Boolean(apiKey),
+    model: config?.model || "",
+    base_url: baseUrl,
+  });
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -21,13 +49,18 @@ export async function POST(
   const { id } = await params;
   const body = await request.json();
 
-  if (!ENGINE_DEFAULT_NAMES[id]) {
+  if (!isSupportedEngine(id)) {
     return NextResponse.json({ error: "Unsupported engine" }, { status: 400 });
   }
 
-  const apiKey = normalizeString(body.api_key);
-  const baseUrl = normalizeString(body.base_url);
-  const name = normalizeString(body.name);
+  const existing = getEngineConfig(id);
+  const apiKey = normalizeString(body.api_key) || existing?.api_key || "";
+  const baseUrl =
+    typeof body.base_url === "string"
+      ? normalizeString(body.base_url)
+      : existing?.base_url || "";
+  const name = normalizeString(body.name) || existing?.name || ENGINE_DEFAULT_NAMES[id];
+  const model = typeof body.model === "string" ? body.model.trim() : existing?.model || "";
 
   if (!apiKey) {
     return NextResponse.json({ error: "api_key is required" }, { status: 400 });
@@ -39,9 +72,9 @@ export async function POST(
 
   upsertEngineConfig({
     id,
-    name: name || ENGINE_DEFAULT_NAMES[id],
+    name,
     api_key: apiKey,
-    model: typeof body.model === "string" ? body.model : "",
+    model,
     base_url: baseUrl,
     extra: "{}",
   });

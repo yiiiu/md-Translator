@@ -40,6 +40,50 @@ async function main() {
     throw new Error("Expected config save to succeed");
   }
 
+  const savedConfig = await expectJson(`${base}/api/engines/custom-openai/config`);
+  if (savedConfig.data.name !== configPayload.name) {
+    throw new Error("Expected custom provider name to persist");
+  }
+  if (savedConfig.data.base_url !== configPayload.base_url) {
+    throw new Error("Expected custom provider base_url to persist");
+  }
+  if (savedConfig.data.model !== configPayload.model) {
+    throw new Error("Expected custom provider model to persist");
+  }
+  if (savedConfig.data.api_key_configured !== true) {
+    throw new Error("Expected config read endpoint to report stored api key");
+  }
+  if ("api_key" in savedConfig.data) {
+    throw new Error("Expected config read endpoint not to expose api_key");
+  }
+
+  const updatedConfigPayload = {
+    name: "Relay Test Updated",
+    base_url: "https://example.com/updated/v1",
+    model: "updated-demo-model"
+  };
+
+  const updateResponse = await expectJson(`${base}/api/engines/custom-openai/config`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updatedConfigPayload)
+  });
+
+  if (!updateResponse.data.ok) {
+    throw new Error("Expected existing custom provider config update to succeed without resending api_key");
+  }
+
+  const updatedConfig = await expectJson(`${base}/api/engines/custom-openai/config`);
+  if (updatedConfig.data.name !== updatedConfigPayload.name) {
+    throw new Error("Expected updated custom provider name to persist");
+  }
+  if (updatedConfig.data.base_url !== updatedConfigPayload.base_url) {
+    throw new Error("Expected updated custom provider base_url to persist");
+  }
+  if (updatedConfig.data.model !== updatedConfigPayload.model) {
+    throw new Error("Expected updated custom provider model to persist");
+  }
+
   const engines = await expectJson(`${base}/api/engines`);
   const customEngine = (engines.data.engines || []).find(
     (engine) => engine.id === "custom-openai"

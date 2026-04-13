@@ -43,8 +43,18 @@ export interface EngineTestResponse {
   error?: string;
 }
 
+export interface EngineConfigResponse {
+  id: string;
+  name: string;
+  configured: boolean;
+  api_key_configured: boolean;
+  model: string;
+  base_url: string;
+  error?: string;
+}
+
 interface EngineConfigRequest {
-  api_key: string;
+  api_key?: string;
   model?: string;
   base_url?: string;
   name?: string;
@@ -148,6 +158,11 @@ export async function startTranslation(
 export async function fetchEngines(): Promise<EngineListResponse> {
   const response = await fetch("/api/engines");
   return (await response.json()) as EngineListResponse;
+}
+
+export async function fetchEngineConfig(id: string): Promise<EngineConfigResponse> {
+  const response = await fetch(`/api/engines/${id}/config`);
+  return (await response.json()) as EngineConfigResponse;
 }
 
 export async function configureEngine(
