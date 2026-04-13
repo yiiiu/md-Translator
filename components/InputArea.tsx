@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ChangeEvent, type DragEvent } from "react";
+import { useEffect, useRef, type ChangeEvent } from "react";
 import { useTranslationStore } from "@/stores/translation";
 import { parseMarkdown } from "@/utils/markdown-parser";
 
@@ -14,6 +14,17 @@ function mapToParagraphs(markdown: string) {
   }));
 }
 
+function isMarkdownFile(file: File) {
+  const name = file.name.toLowerCase();
+  return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".txt");
+}
+
+function isEditableTarget(target: EventTarget | null, importTextarea: HTMLTextAreaElement | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target === importTextarea) return false;
+  return Boolean(target.closest("input, textarea, [contenteditable='true']"));
+}
+
 export default function InputArea() {
   const { setParagraphs, reset, paragraphs } = useTranslationStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -21,8 +32,58 @@ export default function InputArea() {
 
   const syncMarkdown = (markdown: string) => {
     if (!markdown.trim()) return;
+    if (textareaRef.current) {
+      textareaRef.current.value = markdown;
+    }
     setParagraphs(mapToParagraphs(markdown));
   };
+
+  const readMarkdownFile = (file: File) => {
+    if (!isMarkdownFile(file)) return;
+
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      const markdown =
+        typeof loadEvent.target?.result === "string" ? loadEvent.target.result : "";
+      syncMarkdown(markdown);
+    };
+    reader.readAsText(file);
+  };
+
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      if (isEditableTarget(event.target, textareaRef.current)) return;
+
+      const markdown = event.clipboardData?.getData("text/plain") || "";
+      if (!markdown.trim()) return;
+
+      event.preventDefault();
+      syncMarkdown(markdown);
+    };
+
+    const handleDragOver = (event: DragEvent) => {
+      if (!event.dataTransfer?.types.includes("Files")) return;
+      event.preventDefault();
+    };
+
+    const handleDrop = (event: DragEvent) => {
+      const file = event.dataTransfer?.files?.[0];
+      if (!file) return;
+
+      event.preventDefault();
+      readMarkdownFile(file);
+    };
+
+    window.addEventListener("paste", handlePaste);
+    window.addEventListener("dragover", handleDragOver);
+    window.addEventListener("drop", handleDrop);
+
+    return () => {
+      window.removeEventListener("paste", handlePaste);
+      window.removeEventListener("dragover", handleDragOver);
+      window.removeEventListener("drop", handleDrop);
+    };
+  });
 
   const handleParse = () => {
     syncMarkdown(textareaRef.current?.value || "");
@@ -32,35 +93,7 @@ export default function InputArea() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      const markdown =
-        typeof loadEvent.target?.result === "string" ? loadEvent.target.result : "";
-      if (textareaRef.current) {
-        textareaRef.current.value = markdown;
-      }
-      syncMarkdown(markdown);
-    };
-    reader.readAsText(file);
-  };
-
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const file = event.dataTransfer.files?.[0];
-    if (!file || !file.name.endsWith(".md")) {
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      const markdown =
-        typeof loadEvent.target?.result === "string" ? loadEvent.target.result : "";
-      if (textareaRef.current) {
-        textareaRef.current.value = markdown;
-      }
-      syncMarkdown(markdown);
-    };
-    reader.readAsText(file);
+    readMarkdownFile(file);
   };
 
   const handleClear = () => {
@@ -73,8 +106,6 @@ export default function InputArea() {
   return (
     <footer
       className="bottom-action-shell grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(12rem,18rem)] lg:items-center lg:px-8"
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={handleDrop}
     >
       <textarea
         ref={textareaRef}
@@ -129,8 +160,10 @@ export default function InputArea() {
         <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#003ec7]">
           Active
         </span>
+        <span className="text-[10px] font-bold text-[#737688]">
+          Drop .md anywhere · Ctrl+V paste
+        </span>
       </div>
     </footer>
   );
 }
-
