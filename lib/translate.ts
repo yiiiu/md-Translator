@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { TranslateParagraph, TranslationResult } from "./engines/types";
 import { OpenAIEngine } from "./engines/openai";
 import { getCached, setCache } from "./cache";
-import { createTask, updateTaskProgress } from "./db";
+import { createTask, createTaskParagraph, updateTaskProgress } from "./db";
 
 export interface TranslateRequest {
   engine: string;
@@ -38,7 +38,8 @@ function groupParagraphs(paragraphs: TranslateParagraph[]): TranslateParagraph[]
 }
 
 export async function* translateStream(
-  request: TranslateRequest
+  request: TranslateRequest,
+  signal?: AbortSignal
 ): AsyncGenerator<SSEEvent> {
   const { engine: engineId, target_lang, paragraphs } = request;
 
@@ -55,6 +56,14 @@ export async function* translateStream(
   // Emit non-translatable paragraphs as done immediately (keep original)
   for (const id of nonTranslatableIds) {
     const p = paragraphs.find((pp) => pp.id === id)!;
+    createTaskParagraph({
+      task_id: taskId,
+      paragraph_id: p.id,
+      type: p.type,
+      original: p.content,
+      translated: p.content,
+      sort_order: p.index,
+    });
     yield { paragraph_id: id, status: "done", translated: p.content };
   }
 
@@ -69,6 +78,14 @@ export async function* translateStream(
     for (const p of group) {
       const cached = getCached(p.content, engineId, target_lang);
       if (cached) {
+        createTaskParagraph({
+          task_id: taskId,
+          paragraph_id: p.id,
+          type: p.type,
+          original: p.content,
+          translated: cached,
+          sort_order: p.index,
+        });
         yield { paragraph_id: p.id, status: "done", translated: cached };
         completedIds.push(p.id);
       } else {
@@ -78,7 +95,9 @@ export async function* translateStream(
     }
 
     if (toTranslate.length === 0) continue;
-    translationPromises.push(translateGroupWithRetry(toTranslate, engineId, target_lang));
+    translationPromises.push(
+      translateGroupWithRetry(toTranslate, engineId, target_lang, signal)
+    );
   }
 
   updateTaskProgress(taskId, "processing", completedIds, failedIds);
@@ -94,6 +113,17 @@ export async function* translateStream(
     if (!outcome) continue;
 
     if (outcome.status === "done") {
+      const original = paragraphs.find(
+        (paragraph) => paragraph.id === outcome.paragraphId
+      );
+      createTaskParagraph({
+        task_id: taskId,
+        paragraph_id: outcome.paragraphId,
+        type: original?.type ?? "paragraph",
+        original: original?.content ?? "",
+        translated: outcome.translated ?? "",
+        sort_order: original?.index ?? 0,
+      });
       yield {
         paragraph_id: outcome.paragraphId,
         status: "done",
@@ -121,10 +151,11 @@ export async function* translateStream(
 async function translateGroupWithRetry(
   paragraphs: TranslateParagraph[],
   engineId: string,
-  targetLang: string
+  targetLang: string,
+  signal?: AbortSignal
 ): Promise<ParagraphOutcome[]> {
   try {
-    return await translateGroup(paragraphs, engineId, targetLang, true);
+    return await translateGroup(paragraphs, engineId, targetLang, true, signal);
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error";
 
@@ -139,7 +170,7 @@ async function translateGroupWithRetry(
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     try {
-      return await translateGroup(paragraphs, engineId, targetLang, false);
+      return await translateGroup(paragraphs, engineId, targetLang, false, signal);
     } catch (retryErr: unknown) {
       const retryErrorMsg =
         retryErr instanceof Error ? retryErr.message : "Unknown error";
@@ -156,19 +187,35 @@ async function translateGroup(
   paragraphs: TranslateParagraph[],
   engineId: string,
   targetLang: string,
-  withTimeout: boolean
+  withTimeout: boolean,
+  signal?: AbortSignal
 ): Promise<ParagraphOutcome[]> {
   const eng = createEngine(engineId);
   const controller = withTimeout ? new AbortController() : undefined;
   const timeout = controller
     ? setTimeout(() => controller.abort(), TIMEOUT_MS)
     : undefined;
+  const handleAbort =
+    controller && signal
+      ? () => {
+          if (!controller.signal.aborted) {
+            controller.abort();
+          }
+        }
+      : undefined;
+
+  if (handleAbort) {
+    signal?.addEventListener("abort", handleAbort, { once: true });
+  }
 
   let results: TranslationResult[];
   try {
     results = await eng.translateBatch(paragraphs, targetLang, controller?.signal);
   } finally {
     if (timeout) clearTimeout(timeout);
+    if (handleAbort) {
+      signal?.removeEventListener("abort", handleAbort);
+    }
   }
 
   const resultsById = new Map(results.map((result) => [result.paragraphId, result]));

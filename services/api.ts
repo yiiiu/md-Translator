@@ -30,6 +30,31 @@ interface ApiErrorResponse {
   error?: string;
 }
 
+export interface HistoryDetailResponse {
+  task?: {
+    id: string;
+    status: string;
+    engine: string;
+    target_lang: string;
+    created_at?: string;
+    paragraphs: Array<{
+      id?: number;
+      paragraph_id: string;
+      type: string;
+      original: string;
+      translated: string;
+      sort_order: number;
+    }>;
+  };
+  error?: string;
+}
+
+export interface CacheStatsResponse {
+  count: number;
+  sizeBytes: number;
+  error?: string;
+}
+
 export interface EngineListResponse {
   engines?: Array<{
     id: string;
@@ -108,6 +133,7 @@ export interface GlossaryTermRequest {
 export interface AppSettingsResponse {
   ui_language: "en" | "zh-CN";
   theme_mode: "system" | "light" | "dark";
+  default_engine: string;
   default_target_lang: string;
   auto_translate_enabled: boolean;
   auto_translate_debounce_ms: number;
@@ -123,7 +149,11 @@ export async function startTranslation(
   mode: "full" | "lazy"
 ): Promise<void> {
   const store = useTranslationStore.getState();
-  store.setConnectionLost(false);
+  const requestId = crypto.randomUUID();
+  const controller = new AbortController();
+  store.beginTranslationRun(requestId, controller);
+  const isActiveRequest = () =>
+    useTranslationStore.getState().activeRequestId === requestId;
 
   const body: TranslateRequest = {
     engine,
@@ -141,6 +171,7 @@ export async function startTranslation(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    signal: controller.signal,
   });
 
   if (!response.ok) {
@@ -175,6 +206,9 @@ export async function startTranslation(
           const event = JSON.parse(payload) as TranslateEvent;
 
           if (event.type === "complete") {
+            if (!isActiveRequest()) {
+              return;
+            }
             return;
           }
 
@@ -182,7 +216,7 @@ export async function startTranslation(
             throw new Error(event.error || "Translation stream failed");
           }
 
-          if (!event.paragraph_id) {
+          if (!event.paragraph_id || !isActiveRequest()) {
             continue;
           }
 
@@ -204,10 +238,15 @@ export async function startTranslation(
       }
     }
   } catch (error: unknown) {
+    if (!isActiveRequest()) {
+      return;
+    }
     if (!(error instanceof DOMException && error.name === "AbortError")) {
       store.setConnectionLost(true);
     }
     throw error;
+  } finally {
+    store.finishTranslationRun(requestId);
   }
 }
 
@@ -418,6 +457,25 @@ export async function deleteGlossaryTerm(
 export async function fetchAppSettings(): Promise<AppSettingsResponse> {
   const response = await fetch("/api/settings");
   return (await response.json()) as AppSettingsResponse;
+}
+
+export async function fetchHistoryDetail(
+  taskId: string
+): Promise<HistoryDetailResponse> {
+  const response = await fetch(`/api/history/${taskId}`);
+  return (await response.json()) as HistoryDetailResponse;
+}
+
+export async function fetchCacheStats(): Promise<CacheStatsResponse> {
+  const response = await fetch("/api/cache");
+  return (await response.json()) as CacheStatsResponse;
+}
+
+export async function clearCache(): Promise<{ ok: boolean; error?: string }> {
+  const response = await fetch("/api/cache", {
+    method: "DELETE",
+  });
+  return (await response.json()) as { ok: boolean; error?: string };
 }
 
 export async function updateAppSettings(

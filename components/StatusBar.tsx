@@ -21,6 +21,11 @@ export default function StatusBar() {
   const errors = paragraphs.filter((paragraph) => paragraph.status === "error").length;
   const progress = total > 0 ? (done / total) * 100 : 0;
   const canRetryFailures = errors > 0 && !retryingFailures;
+  const activeStatusLabel = connectionLost
+    ? text.connectionLost
+    : translating > 0
+      ? text.translating
+      : text.ready;
 
   async function handleRetryFailures() {
     if (!canRetryFailures) return;
@@ -54,7 +59,7 @@ export default function StatusBar() {
             </button>
           ) : null}
           <span className="text-[10px] font-extrabold tracking-[0.18em] text-[var(--primary)]">
-            {connectionLost ? text.connectionLost : text.ready}
+            {activeStatusLabel}
           </span>
         </div>
       </div>

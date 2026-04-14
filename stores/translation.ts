@@ -24,7 +24,9 @@ interface TranslationStore {
   targetLang: string;
   mode: "full" | "lazy";
   taskId: string | null;
+  activeRequestId: string | null;
   connectionLost: boolean;
+  abortController: AbortController | null;
   setRawInput: (text: string) => void;
   setParagraphs: (paragraphs: Paragraph[]) => void;
   updateParagraph: (id: string, update: Partial<Paragraph>) => void;
@@ -33,6 +35,10 @@ interface TranslationStore {
   setMode: (mode: "full" | "lazy") => void;
   setTaskId: (id: string | null) => void;
   setConnectionLost: (lost: boolean) => void;
+  beginTranslationRun: (requestId: string, controller: AbortController) => void;
+  finishTranslationRun: (requestId: string) => void;
+  setAbortController: (controller: AbortController | null) => void;
+  cancelTranslation: () => void;
   reset: () => void;
 }
 
@@ -43,7 +49,9 @@ const initialState = {
   targetLang: "zh-CN",
   mode: "full" as const,
   taskId: null,
+  activeRequestId: null,
   connectionLost: false,
+  abortController: null,
 };
 
 export const useTranslationStore = create<TranslationStore>((set) => ({
@@ -61,6 +69,33 @@ export const useTranslationStore = create<TranslationStore>((set) => ({
   setMode: (mode) => set({ mode }),
   setTaskId: (taskId) => set({ taskId }),
   setConnectionLost: (connectionLost) => set({ connectionLost }),
+  beginTranslationRun: (activeRequestId, abortController) =>
+    set((state) => {
+      state.abortController?.abort();
+      return {
+        activeRequestId,
+        abortController,
+        connectionLost: false,
+      };
+    }),
+  finishTranslationRun: (requestId) =>
+    set((state) =>
+      state.activeRequestId === requestId
+        ? {
+            activeRequestId: null,
+            abortController: null,
+          }
+        : {}
+    ),
+  setAbortController: (abortController) => set({ abortController }),
+  cancelTranslation: () =>
+    set((state) => {
+      state.abortController?.abort();
+      return {
+        activeRequestId: null,
+        abortController: null,
+      };
+    }),
   reset: () =>
     set(() => ({
       ...initialState,

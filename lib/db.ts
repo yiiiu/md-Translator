@@ -7,6 +7,7 @@ import {
   normalizeThemeMode,
   type AppSettings,
 } from "./app-settings";
+import { decrypt, encrypt } from "./crypto";
 
 const DB_PATH = path.join(process.cwd(), "data", "md-translator.db");
 
@@ -66,6 +67,21 @@ function createTables(db: Database.Database) {
       created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS task_paragraphs (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      task_id       TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+      paragraph_id  TEXT NOT NULL,
+      type          TEXT NOT NULL DEFAULT 'paragraph',
+      original      TEXT NOT NULL DEFAULT '',
+      translated    TEXT NOT NULL DEFAULT '',
+      sort_order    INTEGER NOT NULL DEFAULT 0,
+      created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(task_id, paragraph_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_task_paragraphs_task_id
+      ON task_paragraphs(task_id, sort_order);
+
     CREATE TABLE IF NOT EXISTS glossary_terms (
       id              INTEGER PRIMARY KEY AUTOINCREMENT,
       source_term     TEXT NOT NULL,
@@ -82,6 +98,7 @@ function createTables(db: Database.Database) {
       id                          INTEGER PRIMARY KEY CHECK (id = 1),
       ui_language                 TEXT NOT NULL DEFAULT 'en',
       theme_mode                  TEXT NOT NULL DEFAULT 'system',
+      default_engine              TEXT NOT NULL DEFAULT 'openai',
       default_target_lang         TEXT NOT NULL DEFAULT 'zh-CN',
       auto_translate_enabled      INTEGER NOT NULL DEFAULT 1,
       auto_translate_debounce_ms  INTEGER NOT NULL DEFAULT 1500,
@@ -95,15 +112,17 @@ function createTables(db: Database.Database) {
       id,
       ui_language,
       theme_mode,
+      default_engine,
       default_target_lang,
       auto_translate_enabled,
       auto_translate_debounce_ms
     )
-    VALUES (1, ?, ?, ?, ?, ?)
+    VALUES (1, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO NOTHING`
   ).run(
     DEFAULT_APP_SETTINGS.ui_language,
     DEFAULT_APP_SETTINGS.theme_mode,
+    DEFAULT_APP_SETTINGS.default_engine,
     DEFAULT_APP_SETTINGS.default_target_lang,
     DEFAULT_APP_SETTINGS.auto_translate_enabled ? 1 : 0,
     DEFAULT_APP_SETTINGS.auto_translate_debounce_ms
@@ -120,6 +139,12 @@ function ensureAppSettingsColumns(db: Database.Database) {
       "ALTER TABLE app_settings ADD COLUMN theme_mode TEXT NOT NULL DEFAULT 'system'"
     );
   }
+
+  if (!columns.some((column) => column.name === "default_engine")) {
+    db.exec(
+      "ALTER TABLE app_settings ADD COLUMN default_engine TEXT NOT NULL DEFAULT 'openai'"
+    );
+  }
 }
 
 // --- engine_configs ---
@@ -133,12 +158,23 @@ export interface EngineConfig {
   extra: string;
 }
 
+function decryptConfig(config: EngineConfig): EngineConfig {
+  return {
+    ...config,
+    api_key: decrypt(config.api_key),
+  };
+}
+
 export function getEngineConfig(id: string): EngineConfig | undefined {
-  return getDb().prepare("SELECT * FROM engine_configs WHERE id = ?").get(id) as EngineConfig | undefined;
+  const row = getDb()
+    .prepare("SELECT * FROM engine_configs WHERE id = ?")
+    .get(id) as EngineConfig | undefined;
+  return row ? decryptConfig(row) : undefined;
 }
 
 export function getAllEngineConfigs(): EngineConfig[] {
-  return getDb().prepare("SELECT * FROM engine_configs").all() as EngineConfig[];
+  const rows = getDb().prepare("SELECT * FROM engine_configs").all() as EngineConfig[];
+  return rows.map(decryptConfig);
 }
 
 export function upsertEngineConfig(cfg: Omit<EngineConfig, "created_at" | "updated_at">): void {
@@ -152,11 +188,29 @@ export function upsertEngineConfig(cfg: Omit<EngineConfig, "created_at" | "updat
       base_url = excluded.base_url,
       extra = excluded.extra,
       updated_at = CURRENT_TIMESTAMP
-  `).run(cfg.id, cfg.name, cfg.api_key, cfg.model, cfg.base_url, cfg.extra);
+  `).run(
+    cfg.id,
+    cfg.name,
+    encrypt(cfg.api_key),
+    cfg.model,
+    cfg.base_url,
+    cfg.extra
+  );
 }
 
 export function deleteEngineConfig(id: string): void {
   getDb().prepare("DELETE FROM engine_configs WHERE id = ?").run(id);
+
+  if (getAppSettings().default_engine === id) {
+    getDb()
+      .prepare(
+        `UPDATE app_settings
+         SET default_engine = 'openai',
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = 1`
+      )
+      .run();
+  }
 }
 
 // --- translation_cache ---
@@ -194,6 +248,25 @@ export function setCachedTranslation(
   `).run(contentHash, engine, targetLang, original, translated);
 }
 
+export function getCacheStats(): { count: number; sizeBytes: number } {
+  const row = getDb()
+    .prepare(
+      `SELECT COUNT(*) as count,
+              SUM(LENGTH(original) + LENGTH(translated)) as sizeBytes
+       FROM translation_cache`
+    )
+    .get() as { count: number; sizeBytes: number | null };
+
+  return {
+    count: row.count ?? 0,
+    sizeBytes: row.sizeBytes ?? 0,
+  };
+}
+
+export function clearCache(): void {
+  getDb().prepare("DELETE FROM translation_cache").run();
+}
+
 // --- tasks ---
 
 export interface Task {
@@ -206,12 +279,76 @@ export interface Task {
   created_at?: string;
 }
 
+export interface TaskParagraph {
+  id: number;
+  task_id: string;
+  paragraph_id: string;
+  type: string;
+  original: string;
+  translated: string;
+  sort_order: number;
+  created_at?: string;
+}
+
 export function createTask(id: string, engine: string, targetLang: string): void {
   getDb().prepare("INSERT INTO tasks (id, engine, target_lang) VALUES (?, ?, ?)").run(id, engine, targetLang);
 }
 
+export function createTaskParagraph(input: {
+  task_id: string;
+  paragraph_id: string;
+  type: string;
+  original: string;
+  translated: string;
+  sort_order: number;
+}): void {
+  getDb()
+    .prepare(
+      `INSERT OR REPLACE INTO task_paragraphs
+       (task_id, paragraph_id, type, original, translated, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      input.task_id,
+      input.paragraph_id,
+      input.type,
+      input.original,
+      input.translated,
+      input.sort_order
+    );
+}
+
 export function getTask(id: string): Task | undefined {
   return getDb().prepare("SELECT * FROM tasks WHERE id = ?").get(id) as Task | undefined;
+}
+
+export function listTaskParagraphs(taskId: string): TaskParagraph[] {
+  return getDb()
+    .prepare(
+      `SELECT id, task_id, paragraph_id, type, original, translated, sort_order, created_at
+       FROM task_paragraphs
+       WHERE task_id = ?
+       ORDER BY sort_order ASC`
+    )
+    .all(taskId) as TaskParagraph[];
+}
+
+export interface TaskWithParagraphs extends Task {
+  paragraphs: TaskParagraph[];
+}
+
+export function getTaskWithParagraphs(
+  taskId: string
+): TaskWithParagraphs | undefined {
+  const task = getTask(taskId);
+  if (!task) {
+    return undefined;
+  }
+
+  return {
+    ...task,
+    paragraphs: listTaskParagraphs(taskId),
+  };
 }
 
 export function updateTaskProgress(
@@ -442,6 +579,7 @@ export function deleteGlossaryTerm(id: number): void {
 interface AppSettingsRow {
   ui_language: string;
   theme_mode: string;
+  default_engine: string;
   default_target_lang: string;
   auto_translate_enabled: number;
   auto_translate_debounce_ms: number;
@@ -453,6 +591,7 @@ function normalizeAppSettingsRow(row: AppSettingsRow | undefined): AppSettings {
       ? {
           ui_language: row.ui_language === "zh-CN" ? "zh-CN" : "en",
           theme_mode: normalizeThemeMode(row.theme_mode),
+          default_engine: row.default_engine,
           default_target_lang: row.default_target_lang,
           auto_translate_enabled: Boolean(row.auto_translate_enabled),
           auto_translate_debounce_ms: row.auto_translate_debounce_ms,
@@ -464,7 +603,7 @@ function normalizeAppSettingsRow(row: AppSettingsRow | undefined): AppSettings {
 export function getAppSettings(): AppSettings {
   const row = getDb()
     .prepare(
-      `SELECT ui_language, theme_mode, default_target_lang, auto_translate_enabled, auto_translate_debounce_ms
+      `SELECT ui_language, theme_mode, default_engine, default_target_lang, auto_translate_enabled, auto_translate_debounce_ms
        FROM app_settings
        WHERE id = 1`
     )
@@ -486,14 +625,16 @@ export function upsertAppSettings(input: Partial<AppSettings>): AppSettings {
         id,
         ui_language,
         theme_mode,
+        default_engine,
         default_target_lang,
         auto_translate_enabled,
         auto_translate_debounce_ms
       )
-      VALUES (1, ?, ?, ?, ?, ?)
+      VALUES (1, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         ui_language = excluded.ui_language,
         theme_mode = excluded.theme_mode,
+        default_engine = excluded.default_engine,
         default_target_lang = excluded.default_target_lang,
         auto_translate_enabled = excluded.auto_translate_enabled,
         auto_translate_debounce_ms = excluded.auto_translate_debounce_ms,
@@ -502,6 +643,7 @@ export function upsertAppSettings(input: Partial<AppSettings>): AppSettings {
     .run(
       nextSettings.ui_language,
       nextSettings.theme_mode,
+      nextSettings.default_engine,
       nextSettings.default_target_lang,
       nextSettings.auto_translate_enabled ? 1 : 0,
       nextSettings.auto_translate_debounce_ms

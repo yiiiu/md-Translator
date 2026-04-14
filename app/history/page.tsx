@@ -227,9 +227,12 @@ export default async function HistoryPage({
                     <tr key={task.id} className="transition hover:bg-[color:color-mix(in_srgb,var(--surface-container-low)_35%,transparent)]">
                       <td className="px-6 py-5">
                         <div className="space-y-1">
-                          <p className="font-semibold text-[var(--on-surface)]">
+                          <Link
+                            href={`/history/${task.id}`}
+                            className="font-semibold text-[var(--primary)] transition hover:underline"
+                          >
                             {text.task} {task.id.slice(0, 8)}
-                          </p>
+                          </Link>
                           <p className="text-xs text-[var(--on-surface-variant)]">{task.id}</p>
                         </div>
                       </td>

@@ -17,7 +17,10 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        for await (const event of translateStream(body)) {
+        for await (const event of translateStream(body, request.signal)) {
+          if (request.signal.aborted) {
+            break;
+          }
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
         }
         controller.close();

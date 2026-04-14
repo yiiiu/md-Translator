@@ -1,4 +1,5 @@
 import MarkdownIt from "markdown-it";
+import katex from "katex";
 import { codeToHtml } from "shiki/bundle/web";
 import type { BundledLanguage } from "shiki";
 
@@ -15,12 +16,9 @@ export async function renderMarkdown(
   themeMode: "light" | "dark" = "light"
 ): Promise<string> {
   const highlightedBlocks: string[] = [];
-  const markdownWithoutFences = await replaceFencedCode(
-    source,
-    highlightedBlocks,
-    themeMode
-  );
-  let rendered = markdown.render(markdownWithoutFences);
+  const markdownWithoutFences = await replaceFencedCode(source, highlightedBlocks, themeMode);
+  const katexProcessed = renderKatex(markdownWithoutFences);
+  let rendered = markdown.render(katexProcessed);
 
   highlightedBlocks.forEach((block, index) => {
     const marker = `@@SHIKI_BLOCK_${index}@@`;
@@ -46,6 +44,18 @@ async function replaceFencedCode(
 
     output += source.slice(cursor, start);
     output += prefix;
+
+    if (parseLanguage(rawInfo) === "mermaid") {
+      const marker = `@@SHIKI_BLOCK_${highlightedBlocks.length}@@`;
+      highlightedBlocks.push(
+        `<div class="mermaid-block" data-mermaid="${encodeURIComponent(code)}">${escapeHtml(
+          code
+        )}</div>`
+      );
+      output += marker;
+      cursor = start + fullMatch.length;
+      continue;
+    }
 
     const marker = `@@SHIKI_BLOCK_${highlightedBlocks.length}@@`;
     highlightedBlocks.push(
@@ -85,4 +95,30 @@ function escapeHtml(value: string) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function renderKatex(source: string): string {
+  let nextSource = source.replace(/\$\$([\s\S]+?)\$\$/g, (_, math: string) => {
+    try {
+      return katex.renderToString(math.trim(), {
+        displayMode: true,
+        throwOnError: false,
+      });
+    } catch {
+      return `<span class="katex-error">${escapeHtml(math)}</span>`;
+    }
+  });
+
+  nextSource = nextSource.replace(/\$([^\n$]+?)\$/g, (_, math: string) => {
+    try {
+      return katex.renderToString(math.trim(), {
+        displayMode: false,
+        throwOnError: false,
+      });
+    } catch {
+      return `<span class="katex-error">${escapeHtml(math)}</span>`;
+    }
+  });
+
+  return nextSource;
 }

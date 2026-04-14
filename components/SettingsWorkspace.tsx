@@ -21,6 +21,7 @@ import {
 import { useTranslationStore } from "@/stores/translation";
 import GlossaryManager from "./GlossaryManager";
 import ProviderSettingsManager from "./ProviderSettingsManager";
+import CacheManager from "./CacheManager";
 import AppSelect, { type AppSelectOption } from "./ui/AppSelect";
 
 type SettingsTab = "general" | "providers" | "glossary";
@@ -431,6 +432,8 @@ export default function SettingsWorkspace({
           </Link>
         </div>
       </section>
+
+      <CacheManager />
     </div>
   );
 

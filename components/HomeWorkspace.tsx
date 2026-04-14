@@ -18,11 +18,19 @@ export default function HomeWorkspace({
   const initializedRef = useRef(false);
 
   if (!initializedRef.current) {
+    const previousDefaultEngine = useAppSettingsStore.getState().defaultEngine;
     const previousDefaultTargetLang =
       useAppSettingsStore.getState().defaultTargetLang;
     const translationState = useTranslationStore.getState();
 
     useAppSettingsStore.getState().applyAppSettings(initialSettings);
+
+    if (
+      !translationState.rawInput &&
+      translationState.engine === previousDefaultEngine
+    ) {
+      translationState.setEngine(initialSettings.default_engine);
+    }
 
     if (
       !translationState.rawInput &&

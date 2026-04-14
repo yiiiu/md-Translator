@@ -18,6 +18,10 @@ const TEXT = {
       paragraphs: "paragraphs",
       upload: "Upload .md",
       clear: "Clear",
+      cancel: "Cancel",
+      notConfigured: "No API Key",
+      lazyMode: "Lazy",
+      fullMode: "Full",
       translate: "Translate",
       translating: "Translating...",
     },
@@ -44,6 +48,7 @@ const TEXT = {
       retryFailed: "Retry failed",
       retrying: "Retrying...",
       ready: "Ready",
+      translating: "Translating",
       connectionLost: "Connection Lost",
       waiting: "Waiting for Markdown input.",
       parsed: "Parsed {count} paragraph buffers.",
@@ -60,6 +65,7 @@ const TEXT = {
       edited: "Edit",
       retry: "Retry",
       retrying: "Retrying...",
+      retranslate: "Re-translate",
     },
     settings: {
       title: "Settings",
@@ -95,6 +101,13 @@ const TEXT = {
       addProvider: "Add Provider",
       glossaryTitle: "Glossary Management",
       glossaryDescription: "Manage project terminology without leaving Settings.",
+      cacheTitle: "Translation Cache",
+      cacheDescription:
+        "Cached translations are reused automatically to avoid redundant API calls.",
+      cacheClear: "Clear Cache",
+      cacheClearing: "Clearing...",
+      cacheEntries: "Cached Entries",
+      cacheSize: "Approximate Size",
     },
     provider: {
       sectionTag: "Provider Config",
@@ -396,7 +409,35 @@ Object.assign(mutableText["zh-CN"].settings, {
   themeDark: "\u6df1\u8272",
   themeSaved: "\u4e3b\u9898\u5df2\u66f4\u65b0\u3002",
   themeSaveFailed: "\u66f4\u65b0\u4e3b\u9898\u5931\u8d25\u3002",
+  cacheTitle: "\u7ffb\u8bd1\u7f13\u5b58",
+  cacheDescription:
+    "\u7f13\u5b58\u7684\u7ffb\u8bd1\u4f1a\u88ab\u81ea\u52a8\u590d\u7528\uff0c\u4ee5\u907f\u514d\u91cd\u590d\u7684 API \u8c03\u7528\u3002",
+  cacheClear: "\u6e05\u7a7a\u7f13\u5b58",
+  cacheClearing: "\u6e05\u7406\u4e2d...",
+  cacheEntries: "\u7f13\u5b58\u6761\u76ee",
+  cacheSize: "\u9884\u4f30\u5927\u5c0f",
 });
+
+Object.assign((mutableText["zh-CN"] as Record<string, unknown>).toolbar as Record<string, string>, {
+  cancel: "\u53d6\u6d88",
+  notConfigured: "\u672a\u914d\u7f6e API Key",
+  lazyMode: "\u6309\u9700",
+  fullMode: "\u5168\u91cf",
+});
+
+Object.assign(
+  (mutableText["zh-CN"] as Record<string, unknown>).paragraph as Record<string, string>,
+  {
+    retranslate: "\u91cd\u65b0\u7ffb\u8bd1",
+  }
+);
+
+Object.assign(
+  (mutableText["zh-CN"] as Record<string, unknown>).statusBar as Record<string, string>,
+  {
+    translating: "\u7ffb\u8bd1\u4e2d",
+  }
+);
 
 export function getUiText(language: UiLanguage) {
   return TEXT[language];
@@ -411,6 +452,7 @@ export function formatUiText(
 
 export function getTargetLanguageOptions(language: UiLanguage) {
   const zhLabels: Record<string, string> = {
+    en: "英语",
     "zh-CN": "简体中文",
     "zh-TW": "繁体中文",
     ja: "日语",

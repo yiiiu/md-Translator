@@ -7,7 +7,12 @@ import {
 import { useEffect, useState, type ChangeEvent } from "react";
 import type { UiLanguage } from "@/lib/app-settings";
 import { getTargetLanguageOptions, getUiText } from "@/lib/ui-text";
-import { fetchEngines, startTranslation } from "@/services/api";
+import {
+  fetchEngines,
+  fetchEngineConfig,
+  startTranslation,
+  updateAppSettings,
+} from "@/services/api";
 import { useAppSettingsStore } from "@/stores/app-settings";
 import { useTranslationStore } from "@/stores/translation";
 import ProviderLogo from "./ProviderLogo";
@@ -22,6 +27,28 @@ const DEFAULT_ENGINE_OPTIONS = [
   },
 ];
 
+function buildTransientEngineOption(engineId: string): AppSelectOption {
+  if (engineId === "openai") {
+    return DEFAULT_ENGINE_OPTIONS[0];
+  }
+
+  if (engineId === "custom-openai" || engineId.startsWith("custom-openai-")) {
+    return {
+      value: engineId,
+      label: "Custom Provider",
+      baseUrl: "",
+      builtin: false,
+    };
+  }
+
+  return {
+    value: engineId,
+    label: engineId,
+    baseUrl: "",
+    builtin: false,
+  };
+}
+
 function isMarkdownFile(file: File) {
   const name = file.name.toLowerCase();
   return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".txt");
@@ -33,26 +60,41 @@ export default function Toolbar({
   uiLanguage?: UiLanguage;
 }) {
   const storeUiLanguage = useAppSettingsStore((state) => state.uiLanguage);
+  const defaultEngine = useAppSettingsStore((state) => state.defaultEngine);
   const appSettingsHydrated = useAppSettingsStore((state) => state.appSettingsHydrated);
   const resolvedUiLanguage = appSettingsHydrated ? storeUiLanguage : uiLanguage || "en";
   const text = getUiText(resolvedUiLanguage);
+  const toolbarText = text.toolbar as ReturnType<typeof getUiText>["toolbar"] & {
+    cancel: string;
+    notConfigured: string;
+    lazyMode: string;
+    fullMode: string;
+  };
   const targetLanguageOptions = getTargetLanguageOptions(resolvedUiLanguage);
   const {
     engine,
     targetLang,
     mode,
     paragraphs,
+    abortController,
+    cancelTranslation,
     setEngine,
     setTargetLang,
+    setMode,
     setRawInput,
     reset,
   } = useTranslationStore();
-  const [translating, setTranslating] = useState(false);
+  const [engineConfigured, setEngineConfigured] = useState(true);
   const [engineOptions, setEngineOptions] = useState(DEFAULT_ENGINE_OPTIONS);
+  const displayEngineOptions = engineOptions.some((option) => option.value === engine)
+    ? engineOptions
+    : [buildTransientEngineOption(engine), ...engineOptions];
 
+  const translating = Boolean(abortController);
   const canTranslate = paragraphs.length > 0 && !translating;
   const selectedEngine =
-    engineOptions.find((option) => option.value === engine) ?? DEFAULT_ENGINE_OPTIONS[0];
+    displayEngineOptions.find((option) => option.value === engine) ??
+    buildTransientEngineOption(engine);
   const engineSelectWidth = `${Math.min(
     Math.max(selectedEngine.label.length + 2, 10),
     30
@@ -92,6 +134,59 @@ export default function Toolbar({
     };
   }, [setEngine]);
 
+  useEffect(() => {
+    let active = true;
+
+    if (engine === defaultEngine) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void updateAppSettings({ default_engine: engine })
+      .then((nextSettings) => {
+        if (!active) {
+          return;
+        }
+
+        if (nextSettings.error) {
+          console.error("Failed to persist default engine:", nextSettings.error);
+          return;
+        }
+
+        useAppSettingsStore.getState().applyAppSettings(nextSettings);
+      })
+      .catch((error) => {
+        if (active) {
+          console.error("Failed to persist default engine:", error);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [defaultEngine, engine]);
+
+  useEffect(() => {
+    let active = true;
+
+    void fetchEngineConfig(engine)
+      .then((config) => {
+        if (active) {
+          setEngineConfigured(config.configured);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setEngineConfigured(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [engine]);
+
   const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !isMarkdownFile(file)) {
@@ -112,8 +207,6 @@ export default function Toolbar({
   const handleTranslate = async () => {
     if (!canTranslate) return;
 
-    setTranslating(true);
-
     const { updateParagraph } = useTranslationStore.getState();
     for (const paragraph of paragraphs) {
       updateParagraph(paragraph.id, {
@@ -127,12 +220,14 @@ export default function Toolbar({
       });
     }
 
+    if (mode === "lazy") {
+      return;
+    }
+
     try {
       await startTranslation(paragraphs, engine, targetLang, mode);
     } catch (error) {
       console.error("Translation failed:", error);
-    } finally {
-      setTranslating(false);
     }
   };
 
@@ -142,7 +237,7 @@ export default function Toolbar({
         <AppSelect
           value={engine}
           onValueChange={setEngine}
-          options={engineOptions}
+          options={displayEngineOptions}
           ariaLabel="Translation engine"
           leading={
             <ProviderLogo
@@ -161,6 +256,24 @@ export default function Toolbar({
           width={engineSelectWidth}
           triggerClassName="px-3 py-2 text-sm font-semibold"
         />
+
+        {!engineConfigured ? (
+          <span className="rounded-full bg-[var(--error-container)] px-2 py-1 text-[10px] font-extrabold tracking-[0.14em] text-[var(--error)]">
+            {toolbarText.notConfigured}
+          </span>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={() => setMode(mode === "lazy" ? "full" : "lazy")}
+          className={`rounded-full px-3 py-1.5 text-[10px] font-extrabold tracking-[0.16em] transition ${
+            mode === "lazy"
+              ? "bg-[var(--secondary-container)] text-[var(--primary)]"
+              : "bg-[var(--surface-container-lowest)] text-[var(--on-surface-variant)] ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_18%,transparent)]"
+          }`}
+        >
+          {mode === "lazy" ? toolbarText.lazyMode : toolbarText.fullMode}
+        </button>
 
         <AppSelect
           value={targetLang}
@@ -207,14 +320,26 @@ export default function Toolbar({
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={handleTranslate}
-        disabled={!canTranslate}
-        className="rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-container)] px-7 py-2.5 text-sm font-bold text-[var(--surface-container-lowest)] shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
-      >
-        {translating ? text.toolbar.translating : text.toolbar.translate}
-      </button>
+      <div className="flex items-center gap-2">
+        {translating ? (
+          <button
+            type="button"
+            onClick={cancelTranslation}
+            className="rounded-full bg-[var(--error-container)] px-7 py-2.5 text-sm font-bold text-[var(--error)] transition hover:opacity-90"
+          >
+            {toolbarText.cancel}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleTranslate}
+            disabled={!canTranslate}
+            className="rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-container)] px-7 py-2.5 text-sm font-bold text-[var(--surface-container-lowest)] shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            {text.toolbar.translate}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

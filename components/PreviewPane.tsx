@@ -15,6 +15,7 @@ interface Props {
   onScroll?: UIEventHandler<HTMLDivElement>;
   emptyState?: string;
   viewMode?: "preview" | "code";
+  interactive?: boolean;
 }
 
 function formatLineNumber(index: number) {
@@ -28,6 +29,7 @@ export default function PreviewPane({
   onScroll,
   emptyState,
   viewMode = "preview",
+  interactive = true,
 }: Props) {
   const uiLanguage = useAppSettingsStore((state) => state.uiLanguage);
   const text = getUiText(uiLanguage).splitView;
@@ -87,7 +89,7 @@ export default function PreviewPane({
   };
 
   return (
-    <section className="flex min-h-0 flex-col gap-3">
+    <section className="flex h-full min-h-0 flex-col gap-3">
       <div className="flex items-center justify-between px-2">
         <span
           className={`text-[10px] font-extrabold tracking-[0.24em] ${
@@ -97,7 +99,7 @@ export default function PreviewPane({
           {title}
         </span>
         <div className="flex items-center gap-2">
-          {isTranslation ? (
+          {isTranslation && interactive ? (
             <>
               <div className="flex items-center gap-1 rounded-lg bg-[var(--surface-container-lowest)] p-0.5 ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)]">
                 <button
@@ -163,8 +165,8 @@ export default function PreviewPane({
             : "ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_18%,transparent)]"
         }`}
       >
-        {mode === "code" ? (
-          <div className="grid min-h-0 flex-1 grid-cols-[3.25rem_minmax(0,1fr)]">
+        {mode === "code" && interactive ? (
+          <div className="grid h-full min-h-0 flex-1 grid-cols-[3.25rem_minmax(0,1fr)] overflow-hidden">
             <div
               ref={codeLineNumberRef}
               aria-hidden="true"
@@ -179,7 +181,7 @@ export default function PreviewPane({
               onChange={(event) => handleCodeChange(event.target.value)}
               onScroll={handleCodeScroll}
               placeholder={nextEmptyState}
-              className="custom-scrollbar min-h-0 flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3 font-mono text-xs leading-5 text-[var(--on-surface)] outline-none placeholder:text-[color:color-mix(in_srgb,var(--on-surface-variant)_55%,white)]"
+              className="custom-scrollbar h-full min-h-0 w-full flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3 font-mono text-xs leading-5 text-[var(--on-surface)] outline-none placeholder:text-[color:color-mix(in_srgb,var(--on-surface-variant)_55%,white)]"
             />
           </div>
         ) : paragraphs.length === 0 ? (

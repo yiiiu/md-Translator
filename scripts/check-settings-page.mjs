@@ -18,6 +18,18 @@ for (const expected of ["fetchAppSettings", "updateAppSettings", "AppSettingsRes
   }
 }
 
+const appSettings = readFileSync("lib/app-settings.ts", "utf8");
+for (const expected of ['{ value: "en", label: "English" }', "TARGET_LANGUAGE_OPTIONS"]) {
+  if (!appSettings.includes(expected)) {
+    throw new Error(`lib/app-settings.ts must include ${expected}`);
+  }
+}
+
+const uiText = readFileSync("lib/ui-text.ts", "utf8");
+if (!uiText.includes('en: "英语"')) {
+  throw new Error('lib/ui-text.ts must localize the English target language label for zh-CN UI');
+}
+
 const settingsApiPath = "app/api/settings/route.ts";
 if (!existsSync(settingsApiPath)) {
   throw new Error("Settings API route must exist");
