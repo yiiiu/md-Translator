@@ -12,6 +12,7 @@ export interface TranslateRequest {
 }
 
 export interface SSEEvent {
+  task_id?: string;
   paragraph_id?: string;
   status?: "translating" | "done" | "error";
   translated?: string;
@@ -45,6 +46,7 @@ export async function* translateStream(
 
   const taskId = uuidv4();
   createTask(taskId, engineId, target_lang);
+  yield { task_id: taskId };
 
   const translatable = paragraphs.filter(
     (p) => p.type !== "code" && p.type !== "mermaid"

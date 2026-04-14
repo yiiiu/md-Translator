@@ -75,6 +75,7 @@ export const useTranslationStore = create<TranslationStore>((set) => ({
       return {
         activeRequestId,
         abortController,
+        taskId: null,
         connectionLost: false,
       };
     }),

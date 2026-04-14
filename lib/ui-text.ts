@@ -204,6 +204,21 @@ const TEXT = {
       created: "Created",
       progress: "Progress",
       status: "Status",
+      actions: "Actions",
+      selectAll: "Select all tasks",
+      selectedCount: "{count} selected",
+      delete: "Delete",
+      deleteTask: "Delete task",
+      deleteSelected: "Delete selected",
+      deleteFiltered: "Delete current results",
+      deleteTaskConfirm: 'Delete task "{id}" from history?',
+      deleteSelectedConfirm: "Delete {count} selected tasks from history?",
+      deleteFilteredConfirm: "Delete all {count} tasks in the current results?",
+      deleteFailed: "Failed to delete history tasks",
+      deleteSuccess: "Deleted {count} history tasks.",
+      deleting: "Deleting...",
+      confirmDelete: "Delete",
+      cancel: "Cancel",
       noResultsTitle: "No history results found",
       noResultsDescription: "Adjust the current search or status filter to inspect other tasks.",
     },
@@ -436,6 +451,30 @@ Object.assign(
   (mutableText["zh-CN"] as Record<string, unknown>).statusBar as Record<string, string>,
   {
     translating: "\u7ffb\u8bd1\u4e2d",
+  }
+);
+
+Object.assign(
+  (mutableText["zh-CN"] as Record<string, unknown>).history as Record<string, string>,
+  {
+    actions: "\u64cd\u4f5c",
+    selectAll: "\u5168\u9009\u5f53\u524d\u4efb\u52a1",
+    selectedCount: "\u5df2\u9009 {count} \u9879",
+    delete: "\u5220\u9664",
+    deleteTask: "\u5220\u9664\u4efb\u52a1",
+    deleteSelected: "\u5220\u9664\u5df2\u9009",
+    deleteFiltered: "\u5220\u9664\u5f53\u524d\u7ed3\u679c",
+    deleteTaskConfirm:
+      "\u786e\u5b9a\u4ece\u5386\u53f2\u8bb0\u5f55\u4e2d\u5220\u9664\u4efb\u52a1 \"{id}\" \u5417\uff1f",
+    deleteSelectedConfirm:
+      "\u786e\u5b9a\u4ece\u5386\u53f2\u8bb0\u5f55\u4e2d\u5220\u9664\u5df2\u9009\u7684 {count} \u6761\u4efb\u52a1\u5417\uff1f",
+    deleteFilteredConfirm:
+      "\u786e\u5b9a\u5220\u9664\u5f53\u524d\u7ed3\u679c\u4e2d\u7684 {count} \u6761\u4efb\u52a1\u5417\uff1f",
+    deleteFailed: "\u5220\u9664\u5386\u53f2\u8bb0\u5f55\u5931\u8d25",
+    deleteSuccess: "\u5df2\u5220\u9664 {count} \u6761\u5386\u53f2\u8bb0\u5f55\u3002",
+    deleting: "\u5220\u9664\u4e2d...",
+    confirmDelete: "\u5220\u9664",
+    cancel: "\u53d6\u6d88",
   }
 );
 

@@ -1,4 +1,5 @@
 import { useTranslationStore, type Paragraph } from "@/stores/translation";
+import type { HistoryStatusFilter } from "@/lib/history";
 
 interface TranslateRequest {
   engine: string;
@@ -13,6 +14,7 @@ interface TranslateRequest {
 }
 
 interface TranslateEvent {
+  task_id?: string;
   paragraph_id?: string;
   status?: "translating" | "done" | "error";
   translated?: string;
@@ -52,6 +54,14 @@ export interface HistoryDetailResponse {
 export interface CacheStatsResponse {
   count: number;
   sizeBytes: number;
+  error?: string;
+}
+
+export interface DeleteHistoryResponse {
+  ok?: boolean;
+  deletedIds?: string[];
+  deletedCount?: number;
+  taskIds?: string[];
   error?: string;
 }
 
@@ -205,6 +215,10 @@ export async function startTranslation(
         try {
           const event = JSON.parse(payload) as TranslateEvent;
 
+          if (event.task_id) {
+            store.setTaskId(event.task_id);
+          }
+
           if (event.type === "complete") {
             if (!isActiveRequest()) {
               return;
@@ -256,6 +270,7 @@ export async function retryParagraph(
   targetLang: string
 ): Promise<void> {
   const store = useTranslationStore.getState();
+  const sortOrder = store.paragraphs.findIndex((item) => item.id === paragraph.id);
 
   store.updateParagraph(paragraph.id, {
     status: "translating",
@@ -269,9 +284,11 @@ export async function retryParagraph(
       body: JSON.stringify({
         engine,
         target_lang: targetLang,
+        task_id: store.taskId,
         paragraph_id: paragraph.id,
         content: paragraph.original,
         type: paragraph.type,
+        sort_order: sortOrder >= 0 ? sortOrder : undefined,
       }),
     });
 
@@ -476,6 +493,28 @@ export async function clearCache(): Promise<{ ok: boolean; error?: string }> {
     method: "DELETE",
   });
   return (await response.json()) as { ok: boolean; error?: string };
+}
+
+export async function deleteHistoryTasks(payload: {
+  taskId?: string;
+  taskIds?: string[];
+  scope?: "filtered";
+  q?: string;
+  status?: HistoryStatusFilter;
+}): Promise<DeleteHistoryResponse> {
+  if (payload.taskId && !payload.taskIds && !payload.scope) {
+    const response = await fetch(`/api/history?taskId=${encodeURIComponent(payload.taskId)}`, {
+      method: "DELETE",
+    });
+    return (await response.json()) as DeleteHistoryResponse;
+  }
+
+  const response = await fetch("/api/history", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return (await response.json()) as DeleteHistoryResponse;
 }
 
 export async function updateAppSettings(

@@ -322,6 +322,25 @@ export function getTask(id: string): Task | undefined {
   return getDb().prepare("SELECT * FROM tasks WHERE id = ?").get(id) as Task | undefined;
 }
 
+export function deleteTask(taskId: string): void {
+  getDb().prepare("DELETE FROM tasks WHERE id = ?").run(taskId);
+}
+
+export function deleteTasks(taskIds: string[]): void {
+  if (taskIds.length === 0) {
+    return;
+  }
+
+  const runDelete = getDb().prepare("DELETE FROM tasks WHERE id = ?");
+  const transaction = getDb().transaction((ids: string[]) => {
+    for (const taskId of ids) {
+      runDelete.run(taskId);
+    }
+  });
+
+  transaction(taskIds);
+}
+
 export function listTaskParagraphs(taskId: string): TaskParagraph[] {
   return getDb()
     .prepare(
@@ -360,6 +379,77 @@ export function updateTaskProgress(
   getDb()
     .prepare("UPDATE tasks SET status = ?, completed_ids = ?, failed_ids = ? WHERE id = ?")
     .run(status, JSON.stringify(completedIds), JSON.stringify(failedIds), id);
+}
+
+function parseTaskCompletedIds(value: string): string[] {
+  try {
+    const parsed = JSON.parse(value) as string[];
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseTaskFailedIds(value: string): Record<string, string> {
+  try {
+    const parsed = JSON.parse(value) as Record<string, string>;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(parsed).filter(
+        (entry): entry is [string, string] =>
+          typeof entry[0] === "string" && typeof entry[1] === "string"
+      )
+    );
+  } catch {
+    return {};
+  }
+}
+
+export function syncTaskParagraphResult(input: {
+  taskId: string;
+  paragraphId: string;
+  type: string;
+  original: string;
+  sortOrder?: number;
+  translated?: string;
+  error?: string;
+}): void {
+  const task = getTask(input.taskId);
+  if (!task) {
+    return;
+  }
+
+  const completedIds = new Set(parseTaskCompletedIds(task.completed_ids));
+  const failedIds = parseTaskFailedIds(task.failed_ids);
+
+  if (typeof input.translated === "string") {
+    const existing = getDb()
+      .prepare(
+        `SELECT sort_order
+         FROM task_paragraphs
+         WHERE task_id = ? AND paragraph_id = ?`
+      )
+      .get(input.taskId, input.paragraphId) as { sort_order?: number } | undefined;
+
+    createTaskParagraph({
+      task_id: input.taskId,
+      paragraph_id: input.paragraphId,
+      type: input.type,
+      original: input.original,
+      translated: input.translated,
+      sort_order: existing?.sort_order ?? input.sortOrder ?? completedIds.size,
+    });
+    completedIds.add(input.paragraphId);
+    delete failedIds[input.paragraphId];
+  } else if (typeof input.error === "string" && input.error.length > 0) {
+    completedIds.delete(input.paragraphId);
+    failedIds[input.paragraphId] = input.error;
+  }
+
+  updateTaskProgress(input.taskId, "completed", [...completedIds], failedIds);
 }
 
 export interface TaskListItem {

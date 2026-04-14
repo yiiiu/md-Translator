@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createEngine } from "@/lib/translate";
 import { type TranslateParagraph } from "@/lib/engines/types";
+import { syncTaskParagraphResult } from "@/lib/db";
 
 type ParagraphRetryBody = {
   engine?: unknown;
   target_lang?: unknown;
+  task_id?: unknown;
   paragraph_id?: unknown;
   content?: unknown;
   type?: unknown;
+  sort_order?: unknown;
 };
 
 const supportedTypes = new Set([
@@ -40,11 +43,27 @@ export async function POST(request: NextRequest) {
 
   const engineId = body.engine as string;
   const targetLang = body.target_lang as string;
+  const taskId = typeof body.task_id === "string" && body.task_id ? body.task_id : null;
   const paragraphId = body.paragraph_id as string;
   const content = body.content as string;
   const type = body.type as string;
+  const sortOrder =
+    typeof body.sort_order === "number" && Number.isInteger(body.sort_order)
+      ? body.sort_order
+      : undefined;
 
   if (type === "code" || type === "mermaid") {
+    if (taskId) {
+      syncTaskParagraphResult({
+        taskId,
+        paragraphId,
+        type,
+        original: content,
+        translated: content,
+        sortOrder,
+      });
+    }
+
     return NextResponse.json({ paragraph_id: paragraphId, translated: content });
   }
 
@@ -67,12 +86,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (taskId) {
+      syncTaskParagraphResult({
+        taskId,
+        paragraphId,
+        type,
+        original: content,
+        translated: result.translated,
+        sortOrder,
+      });
+    }
+
     return NextResponse.json({
       paragraph_id: paragraphId,
       translated: result.translated,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
+    if (taskId) {
+      syncTaskParagraphResult({
+        taskId,
+        paragraphId,
+        type,
+        original: content,
+        sortOrder,
+        error: message,
+      });
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

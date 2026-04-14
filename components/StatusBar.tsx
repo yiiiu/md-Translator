@@ -10,7 +10,9 @@ import { useTranslationStore } from "@/stores/translation";
 export default function StatusBar() {
   const { paragraphs, connectionLost, engine, targetLang } = useTranslationStore();
   const uiLanguage = useAppSettingsStore((state) => state.uiLanguage);
-  const text = getUiText(uiLanguage).statusBar;
+  const text = getUiText(uiLanguage).statusBar as ReturnType<typeof getUiText>["statusBar"] & {
+    translating: string;
+  };
   const [retryingFailures, setRetryingFailures] = useState(false);
 
   const done = paragraphs.filter((paragraph) => paragraph.status === "done").length;

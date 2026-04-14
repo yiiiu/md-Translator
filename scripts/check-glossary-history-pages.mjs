@@ -74,6 +74,30 @@ if (!existsSync(glossaryPagePath) || !existsSync(historyPagePath)) {
   throw new Error("Glossary and History pages must exist");
 }
 
+const historyApiPath = "app/api/history/route.ts";
+if (!existsSync(historyApiPath)) {
+  throw new Error("History collection API route must exist");
+}
+
+const historyApi = readFileSync(historyApiPath, "utf8");
+for (const expected of ["export async function DELETE", "deleteTask", "deleteTasks"]) {
+  if (!historyApi.includes(expected)) {
+    throw new Error(`History collection API must include ${expected}`);
+  }
+}
+
+const historyWorkspacePath = "components/HistoryWorkspace.tsx";
+if (!existsSync(historyWorkspacePath)) {
+  throw new Error("HistoryWorkspace component must exist");
+}
+
+const historyWorkspace = readFileSync(historyWorkspacePath, "utf8");
+for (const expected of ['"use client"', "ConfirmDialog", "deleteHistoryTasks"]) {
+  if (!historyWorkspace.includes(expected)) {
+    throw new Error(`HistoryWorkspace must include ${expected}`);
+  }
+}
+
 const glossaryPage = readFileSync(glossaryPagePath, "utf8");
 for (const expected of ['redirect("/settings?tab=glossary")']) {
   if (!glossaryPage.includes(expected)) {
@@ -82,7 +106,7 @@ for (const expected of ['redirect("/settings?tab=glossary")']) {
 }
 
 const historyPage = readFileSync(historyPagePath, "utf8");
-for (const expected of ["<AppHeader", "listTasks", "searchParams", "getAppSettings"]) {
+for (const expected of ["<AppHeader", "listTasks", "searchParams", "getAppSettings", "HistoryWorkspace"]) {
   if (!historyPage.includes(expected)) {
     throw new Error(`History page must include ${expected}`);
   }

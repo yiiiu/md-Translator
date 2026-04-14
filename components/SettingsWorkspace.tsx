@@ -23,6 +23,7 @@ import GlossaryManager from "./GlossaryManager";
 import ProviderSettingsManager from "./ProviderSettingsManager";
 import CacheManager from "./CacheManager";
 import AppSelect, { type AppSelectOption } from "./ui/AppSelect";
+import AppToast from "./ui/AppToast";
 
 type SettingsTab = "general" | "providers" | "glossary";
 
@@ -59,14 +60,9 @@ export default function SettingsWorkspace({
   const [settingsForm, setSettingsForm] = useState<AppSettings>(initialSettings);
   const [savedSettings, setSavedSettings] = useState<AppSettings>(initialSettings);
   const [savingGeneral, setSavingGeneral] = useState(false);
-  const [generalMessage, setGeneralMessage] = useState<string | null>(null);
-  const [generalStatus, setGeneralStatus] = useState<"idle" | "success" | "error">(
-    "idle"
-  );
-  const [savingTheme, setSavingTheme] = useState(false);
-  const [themeMessage, setThemeMessage] = useState<string | null>(null);
-  const [themeStatus, setThemeStatus] = useState<"idle" | "success" | "error">("idle");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastTone, setToastTone] = useState<"success" | "error">("success");
   const setThemeMode = useAppSettingsStore((state) => state.setThemeMode);
 
   if (!initializedRef.current) {
@@ -142,14 +138,12 @@ export default function SettingsWorkspace({
 
   const handleSaveGeneral = async () => {
     setSavingGeneral(true);
-    setGeneralStatus("idle");
-    setGeneralMessage(null);
 
     try {
       const nextSettings = await updateAppSettings(settingsForm);
       if (nextSettings.error) {
-        setGeneralStatus("error");
-        setGeneralMessage(nextSettings.error || text.settings.generalSaveFailed);
+        setToastTone("error");
+        setToastMessage(nextSettings.error || text.settings.generalSaveFailed);
         return;
       }
 
@@ -165,11 +159,11 @@ export default function SettingsWorkspace({
       ) {
         translationState.setTargetLang(nextSettings.default_target_lang);
       }
-      setGeneralStatus("success");
-      setGeneralMessage(text.settings.generalSaved);
+      setToastTone("success");
+      setToastMessage(text.settings.generalSaved);
     } catch (error) {
-      setGeneralStatus("error");
-      setGeneralMessage(
+      setToastTone("error");
+      setToastMessage(
         error instanceof Error ? error.message : text.settings.generalSaveFailed
       );
     } finally {
@@ -194,9 +188,6 @@ export default function SettingsWorkspace({
       ...current,
       theme_mode: nextThemeMode,
     }));
-    setSavingTheme(true);
-    setThemeStatus("idle");
-    setThemeMessage(null);
 
     try {
       const nextSettings = await updateAppSettings({ theme_mode: nextThemeMode });
@@ -213,20 +204,18 @@ export default function SettingsWorkspace({
         ...current,
         theme_mode: nextSettings.theme_mode,
       }));
-      setThemeStatus("success");
-      setThemeMessage(settingsText.themeSaved);
+      setToastTone("success");
+      setToastMessage(settingsText.themeSaved);
     } catch (error) {
       setThemeMode(previousThemeMode);
       setSettingsForm((current) => ({
         ...current,
         theme_mode: previousThemeMode,
       }));
-      setThemeStatus("error");
-      setThemeMessage(
+      setToastTone("error");
+      setToastMessage(
         error instanceof Error ? error.message : settingsText.themeSaveFailed
       );
-    } finally {
-      setSavingTheme(false);
     }
   };
 
@@ -301,18 +290,6 @@ export default function SettingsWorkspace({
           </label>
         </div>
 
-        {themeMessage ? (
-          <p
-            className={`mt-4 rounded-xl px-3 py-2 text-sm ${
-              themeStatus === "success"
-                ? "bg-[var(--secondary-container)] text-[var(--primary)]"
-                : "bg-[var(--error-container)] text-[var(--error)]"
-            }`}
-          >
-            {savingTheme ? `${text.provider.saving}...` : themeMessage}
-          </p>
-        ) : null}
-
         {interfaceLanguageDirty ? (
           <div className="mt-4 flex items-start gap-3 rounded-xl bg-[color:color-mix(in_srgb,var(--secondary-container)_80%,#fff4dd)] px-3 py-2.5 text-sm text-[var(--on-surface-variant)] ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_28%,transparent)]">
             <AlertCircle
@@ -377,25 +354,11 @@ export default function SettingsWorkspace({
           </label>
         </div>
 
-        {generalMessage ? (
-          <p
-            className={`mt-5 rounded-xl px-3 py-2 text-sm ${
-              generalStatus === "success"
-                ? "bg-[var(--secondary-container)] text-[var(--primary)]"
-                : "bg-[var(--error-container)] text-[var(--error)]"
-            }`}
-          >
-            {generalMessage}
-          </p>
-        ) : null}
-
         <div className="mt-6 flex flex-wrap justify-end gap-3">
           <button
             type="button"
             onClick={() => {
               setSettingsForm(savedSettings);
-              setGeneralMessage(null);
-              setGeneralStatus("idle");
             }}
             disabled={!hasGeneralChanges || savingGeneral}
             className="rounded-xl bg-[var(--surface-container-lowest)] px-4 py-2 text-sm font-bold text-[var(--on-surface-variant)] shadow-sm transition hover:bg-[var(--surface-container-high)] disabled:cursor-not-allowed disabled:opacity-55"
@@ -459,6 +422,11 @@ export default function SettingsWorkspace({
           : "280px minmax(0,1fr)",
       }}
     >
+      <AppToast
+        message={toastMessage}
+        tone={toastTone}
+        onClose={() => setToastMessage(null)}
+      />
       <aside className="min-h-0 bg-[var(--surface-container)] xl:sticky xl:top-0">
         <div className="flex h-full min-h-0 flex-col border-r border-[color:color-mix(in_srgb,var(--outline-variant)_24%,transparent)] transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]">
           <div
