@@ -45,13 +45,20 @@ export default function HistoryDetail({ taskId }: { taskId: string }) {
     );
   }
 
-  const originalParagraphs: Paragraph[] = detail.task.paragraphs.map((paragraph) => ({
-    id: paragraph.paragraph_id,
-    type: paragraph.type as Paragraph["type"],
-    original: paragraph.original,
-    translated: paragraph.original,
-    status: "done",
-  }));
+  const originalParagraphs: Paragraph[] = detail.task.paragraphs.map((paragraph) => {
+    const originalContent =
+      paragraph.type === "mermaid"
+        ? paragraph.original.replace(/^```mermaid\b/, "```plaintext")
+        : paragraph.original;
+
+    return {
+      id: paragraph.paragraph_id,
+      type: paragraph.type as Paragraph["type"],
+      original: originalContent,
+      translated: originalContent,
+      status: "done",
+    };
+  });
 
   const translatedParagraphs: Paragraph[] = detail.task.paragraphs.map(
     (paragraph) => ({

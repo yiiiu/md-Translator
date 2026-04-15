@@ -13,7 +13,13 @@ export function mapMarkdownToParagraphs(markdown: string): Paragraph[] {
 
 export function isMarkdownFile(file: File) {
   const name = file.name.toLowerCase();
-  return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".txt");
+  return (
+    name.endsWith(".md") ||
+    name.endsWith(".markdown") ||
+    name.endsWith(".txt") ||
+    name.endsWith(".mmd") ||
+    name.endsWith(".mermaid")
+  );
 }
 
 export async function readMarkdownFile(file: File): Promise<string | null> {
@@ -21,7 +27,7 @@ export async function readMarkdownFile(file: File): Promise<string | null> {
     return null;
   }
 
-  return await new Promise<string>((resolve, reject) => {
+  const raw = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (loadEvent) => {
       const markdown =
@@ -33,4 +39,11 @@ export async function readMarkdownFile(file: File): Promise<string | null> {
     };
     reader.readAsText(file);
   });
+
+  const name = file.name.toLowerCase();
+  if (name.endsWith(".mmd") || name.endsWith(".mermaid")) {
+    return `\`\`\`mermaid\n${raw.trim()}\n\`\`\``;
+  }
+
+  return raw;
 }

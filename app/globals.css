@@ -302,8 +302,10 @@ body {
 
 .markdown-rendered .mermaid-block svg {
   display: block;
-  max-width: none;
-  margin: 0 auto;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  margin: 0;
   user-select: none;
 }
 

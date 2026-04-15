@@ -1,6 +1,6 @@
 import AppHeader from "@/components/AppHeader";
 import HistoryWorkspace from "@/components/HistoryWorkspace";
-import { getAppSettings, listTasks } from "@/lib/db";
+import { getAllEngineConfigs, getAppSettings, listTasks } from "@/lib/db";
 import { normalizeQuery, normalizeStatusFilter } from "@/lib/history";
 
 export default async function HistoryPage({
@@ -13,6 +13,11 @@ export default async function HistoryPage({
   const q = normalizeQuery(params.q);
   const statusFilter = normalizeStatusFilter(params.status);
   const tasks = listTasks({ q });
+  const engineConfigs = getAllEngineConfigs();
+  const engineNameMap: Record<string, string> = {
+    openai: "OpenAI",
+    ...Object.fromEntries(engineConfigs.map((config) => [config.id, config.name])),
+  };
 
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-[var(--background)] text-[var(--on-surface)]">
@@ -23,6 +28,7 @@ export default async function HistoryPage({
           statusFilter={statusFilter}
           q={q}
           uiLanguage={settings.ui_language}
+          engineNameMap={engineNameMap}
         />
       </div>
     </main>

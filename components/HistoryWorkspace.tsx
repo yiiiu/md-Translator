@@ -28,11 +28,13 @@ export default function HistoryWorkspace({
   q,
   statusFilter,
   uiLanguage,
+  engineNameMap = {},
 }: {
   initialTasks: HistoryTaskRecord[];
   q: string;
   statusFilter: HistoryStatusFilter;
   uiLanguage: UiLanguage;
+  engineNameMap?: Record<string, string>;
 }) {
   const text = getUiText(uiLanguage).history as ReturnType<typeof getUiText>["history"] & {
     actions: string;
@@ -320,7 +322,7 @@ export default function HistoryWorkspace({
                     </span>
                   </td>
                   <td className="px-6 py-5 text-sm text-[var(--on-surface-variant)]">
-                    {task.engine}
+                    {engineNameMap[task.engine] ?? task.engine}
                   </td>
                   <td className="px-6 py-5 text-sm text-[var(--on-surface-variant)]">
                     {formatHistoryDate(task.created_at)}

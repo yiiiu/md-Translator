@@ -54,6 +54,30 @@ function parseViewBox(svg: SVGSVGElement) {
   return { x: 0, y: 0, width, height };
 }
 
+function trimSvgToContentBounds(svg: SVGSVGElement) {
+  const contentGroup =
+    svg.querySelector<SVGGElement>("svg > g") ?? svg.querySelector<SVGGElement>("g");
+
+  if (!contentGroup) {
+    return;
+  }
+
+  try {
+    const bbox = contentGroup.getBBox();
+    if (bbox.width <= 0 || bbox.height <= 0) {
+      return;
+    }
+
+    const padding = 24;
+    svg.setAttribute(
+      "viewBox",
+      `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + padding * 2} ${bbox.height + padding * 2}`
+    );
+  } catch {
+    // Ignore environments where SVG bounding boxes are not measurable.
+  }
+}
+
 function mountPanAndZoom(block: HTMLElement) {
   panZoomCleanupMap.get(block)?.();
 
@@ -63,7 +87,8 @@ function mountPanAndZoom(block: HTMLElement) {
   }
 
   block.classList.add("is-interactive");
-  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+  trimSvgToContentBounds(svg);
 
   const initialViewBox = parseViewBox(svg);
   let scale = 1;

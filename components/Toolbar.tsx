@@ -51,7 +51,13 @@ function buildTransientEngineOption(engineId: string): AppSelectOption {
 
 function isMarkdownFile(file: File) {
   const name = file.name.toLowerCase();
-  return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".txt");
+  return (
+    name.endsWith(".md") ||
+    name.endsWith(".markdown") ||
+    name.endsWith(".txt") ||
+    name.endsWith(".mmd") ||
+    name.endsWith(".mermaid")
+  );
 }
 
 export default function Toolbar({
@@ -303,7 +309,7 @@ export default function Toolbar({
           <UploadIcon className="h-4 w-4" strokeWidth={1.8} />
           <input
             type="file"
-            accept=".md,.markdown,.txt"
+            accept=".md,.markdown,.txt,.mmd,.mermaid"
             onChange={handleFileUpload}
             className="hidden"
           />
