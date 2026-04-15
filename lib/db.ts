@@ -8,6 +8,10 @@ import {
   type AppSettings,
 } from "./app-settings";
 import { decrypt, encrypt } from "./crypto";
+import type {
+  GlossaryImportError,
+  ParsedGlossaryImportRow,
+} from "./glossary-import";
 
 const DB_PATH = path.join(process.cwd(), "data", "md-translator.db");
 
@@ -520,6 +524,11 @@ export interface GlossaryListFilters {
   target_lang?: string;
 }
 
+export interface BulkCreateGlossaryTermsResult {
+  inserted: number;
+  errors: GlossaryImportError[];
+}
+
 function normalizeGlossaryTerm(row: GlossaryTerm): GlossaryTerm {
   return {
     ...row,
@@ -624,6 +633,50 @@ export function createGlossaryTerm(input: GlossaryTermInput): GlossaryTerm {
     );
 
   return getGlossaryTerm(Number(result.lastInsertRowid))!;
+}
+
+export function bulkCreateGlossaryTerms(
+  rows: ParsedGlossaryImportRow[]
+): BulkCreateGlossaryTermsResult {
+  if (rows.length === 0) {
+    return { inserted: 0, errors: [] };
+  }
+
+  const insertStatement = getDb().prepare(
+    `INSERT INTO glossary_terms (source_term, target_term, source_lang, target_lang, note, enabled)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  );
+
+  const result: BulkCreateGlossaryTermsResult = {
+    inserted: 0,
+    errors: [],
+  };
+
+  const transaction = getDb().transaction((items: ParsedGlossaryImportRow[]) => {
+    for (const row of items) {
+      try {
+        insertStatement.run(
+          row.source_term,
+          row.target_term,
+          row.source_lang,
+          row.target_lang,
+          row.note,
+          row.enabled ? 1 : 0
+        );
+        result.inserted += 1;
+      } catch (error) {
+        result.errors.push({
+          rowNumber: row.rowNumber,
+          stage: "db",
+          message: error instanceof Error ? error.message : "Database insert failed",
+        });
+      }
+    }
+  });
+
+  transaction(rows);
+
+  return result;
 }
 
 export function updateGlossaryTerm(

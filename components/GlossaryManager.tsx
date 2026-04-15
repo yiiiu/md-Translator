@@ -3,18 +3,29 @@
 import {
   Filter as FilterIcon,
   PencilLine as EditIcon,
+  Download as DownloadIcon,
+  FileUp as FileUpIcon,
   Plus as PlusIcon,
   Power as ToggleIcon,
   Search as SearchIcon,
   Trash2 as DeleteIcon,
 } from "lucide-react";
-import { startTransition, useDeferredValue, useEffect, useState } from "react";
+import {
+  startTransition,
+  useDeferredValue,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 import type { UiLanguage } from "@/lib/app-settings";
 import { formatUiText, getUiText } from "@/lib/ui-text";
 import {
   createGlossaryTerm,
   deleteGlossaryTerm,
   fetchGlossaryTerms,
+  importGlossaryCsv,
+  type GlossaryImportErrorResponse,
   type GlossaryTermRequest,
   type GlossaryTermResponse,
   updateGlossaryTerm,
@@ -46,6 +57,41 @@ const EMPTY_FORM: GlossaryFormState = {
 
 const ALL_SOURCE_LANG_VALUE = "__all_source_lang__";
 const ALL_TARGET_LANG_VALUE = "__all_target_lang__";
+const IMPORT_RESULT_TIMEOUT_MS = 8000;
+
+type GlossaryImportResult = {
+  inserted: number;
+  skipped: number;
+  errors: GlossaryImportErrorResponse[];
+  tone: "success" | "error" | "mixed";
+  message?: string;
+};
+
+function buildGlossaryTemplateCsv() {
+  const rows = [
+    ["source_term", "target_term", "source_lang", "target_lang", "note", "enabled"],
+    ["button", "按钮", "en", "zh-CN", "UI label", "true"],
+    ["provider", "提供商", "en", "zh-CN", "AI provider settings", "true"],
+    ["glossary", "术语表", "en", "zh-CN", "Settings tab label", "true"],
+  ];
+
+  return `\uFEFF${rows
+    .map((columns) =>
+      columns
+        .map((value) => `"${value.replaceAll('"', '""')}"`)
+        .join(",")
+    )
+    .join("\r\n")}`;
+}
+
+function readFileAsUtf8(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => reject(reader.error ?? new Error("Failed to read file"));
+    reader.readAsText(file, "utf-8");
+  });
+}
 
 async function loadGlossaryData(filters: {
   q?: string;
@@ -64,7 +110,22 @@ export default function GlossaryManager({
   showHeader = true,
   uiLanguage = "en",
 }: GlossaryManagerProps) {
-  const glossaryText = getUiText(uiLanguage).glossary;
+  const glossaryText = getUiText(uiLanguage).glossary as ReturnType<
+    typeof getUiText
+  >["glossary"] & {
+    downloadTemplate: string;
+    importCsv: string;
+    importingCsv: string;
+    importReadFailed: string;
+    importFailed: string;
+    importSummary: string;
+    importSummaryNoSkipped: string;
+    importErrorsTitle: string;
+    importRowLabel: string;
+    importFormatStage: string;
+    importValidationStage: string;
+    importDbStage: string;
+  };
   const [terms, setTerms] = useState(initialTerms);
   const [sourceLanguages, setSourceLanguages] = useState(initialSourceLanguages);
   const [targetLanguages, setTargetLanguages] = useState(initialTargetLanguages);
@@ -77,9 +138,12 @@ export default function GlossaryManager({
   const [formState, setFormState] = useState<GlossaryFormState>(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<GlossaryImportResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [confirmDeleteTerm, setConfirmDeleteTerm] =
     useState<GlossaryTermResponse | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const deferredQuery = useDeferredValue(query);
   const sourceLanguageOptions: AppSelectOption[] = [
@@ -148,6 +212,20 @@ export default function GlossaryManager({
     sourceLangFilter,
     targetLangFilter,
   ]);
+
+  useEffect(() => {
+    if (!importResult) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setImportResult(null);
+    }, IMPORT_RESULT_TIMEOUT_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [importResult]);
 
   const refreshTerms = async () => {
     setLoading(true);
@@ -272,6 +350,92 @@ export default function GlossaryManager({
     await refreshTerms();
   };
 
+  const handleDownloadTemplate = () => {
+    const blob = new Blob([buildGlossaryTemplateCsv()], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "glossary-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    setImporting(true);
+    setImportResult(null);
+    setErrorMessage(null);
+
+    try {
+      const csv = await readFileAsUtf8(file);
+      const result = await importGlossaryCsv(csv);
+      const importErrors = result.errors || [];
+
+      if (result.inserted > 0) {
+        await refreshTerms();
+      }
+
+      const tone =
+        importErrors.length === 0
+          ? "success"
+          : result.inserted > 0
+            ? "mixed"
+            : "error";
+
+      setImportResult({
+        inserted: result.inserted,
+        skipped: result.skipped,
+        errors: importErrors,
+        tone,
+        message: result.error,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message === "Failed to read file"
+          ? glossaryText.importReadFailed
+          : error instanceof Error
+            ? error.message
+            : glossaryText.importFailed;
+
+      setImportResult({
+        inserted: 0,
+        skipped: 0,
+        errors: [],
+        tone: "error",
+        message,
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const importToneClasses =
+    importResult?.tone === "success"
+      ? "bg-[var(--secondary-container)] text-[var(--on-surface)]"
+      : importResult?.tone === "mixed"
+        ? "bg-[color:color-mix(in_srgb,var(--secondary-container)_65%,#fff4dd)] text-[var(--on-surface)]"
+        : "bg-[var(--error-container)] text-[var(--error)]";
+
+  const getImportStageLabel = (stage: GlossaryImportErrorResponse["stage"]) => {
+    if (stage === "parse") {
+      return glossaryText.importFormatStage;
+    }
+
+    if (stage === "db") {
+      return glossaryText.importDbStage;
+    }
+
+    return glossaryText.importValidationStage;
+  };
+
   return (
     <>
       <div className="flex flex-col gap-6">
@@ -302,14 +466,43 @@ export default function GlossaryManager({
             </span>
           )}
 
-          <button
-            type="button"
-            onClick={openCreateDialog}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-5 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)]"
-          >
-            <PlusIcon className="h-4 w-4" strokeWidth={1.8} />
-            {glossaryText.add}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleDownloadTemplate}
+              disabled={importing}
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--surface-container-lowest)] px-4 py-3 text-sm font-bold text-[var(--primary)] shadow-sm transition hover:bg-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-55"
+            >
+              <DownloadIcon className="h-4 w-4" strokeWidth={1.8} />
+              {glossaryText.downloadTemplate}
+            </button>
+            <label
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold shadow-sm transition ${
+                importing
+                  ? "cursor-not-allowed bg-[var(--surface-container-high)] text-[var(--on-surface-variant)] opacity-55"
+                  : "cursor-pointer bg-[var(--surface-container-lowest)] text-[var(--primary)] hover:bg-[var(--surface)]"
+              }`}
+            >
+              <FileUpIcon className="h-4 w-4" strokeWidth={1.8} />
+              {importing ? glossaryText.importingCsv : glossaryText.importCsv}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                hidden
+                disabled={importing}
+                onChange={(event) => void handleImportFileChange(event)}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={openCreateDialog}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#003ec7] to-[#0052ff] px-5 py-3 text-sm font-bold text-white shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)]"
+            >
+              <PlusIcon className="h-4 w-4" strokeWidth={1.8} />
+              {glossaryText.add}
+            </button>
+          </div>
         </div>
 
         <div className="rounded-[1.25rem] bg-[var(--surface-container-lowest)] p-4 shadow-[0_24px_48px_rgba(17,28,45,0.06)] ring-1 ring-[color:color-mix(in_srgb,var(--outline-variant)_18%,transparent)]">
@@ -384,6 +577,43 @@ export default function GlossaryManager({
             <p className="mt-4 rounded-xl bg-[#ffdad6] px-3 py-2 text-sm text-[#93000a]">
               {errorMessage}
             </p>
+          ) : null}
+
+          {importResult ? (
+            <div className={`mt-4 rounded-2xl px-4 py-3 text-sm ${importToneClasses}`}>
+              <p className="font-bold">
+                {importResult.skipped > 0
+                  ? formatUiText(glossaryText.importSummary, {
+                      inserted: importResult.inserted,
+                      skipped: importResult.skipped,
+                    })
+                  : formatUiText(glossaryText.importSummaryNoSkipped, {
+                      inserted: importResult.inserted,
+                    })}
+              </p>
+              {importResult.message ? (
+                <p className="mt-2 text-sm">{importResult.message}</p>
+              ) : null}
+              {importResult.errors.length > 0 ? (
+                <>
+                  <p className="mt-2 font-semibold">
+                    {formatUiText(glossaryText.importErrorsTitle, {
+                      count: importResult.errors.length,
+                    })}
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {importResult.errors.map((item) => (
+                      <li key={`${item.stage}-${item.rowNumber}-${item.message}`}>
+                        {formatUiText(glossaryText.importRowLabel, {
+                          row: item.rowNumber,
+                        })}{" "}
+                        [{getImportStageLabel(item.stage)}] {item.message}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </div>
           ) : null}
 
           <div className="custom-scrollbar mt-4 max-h-[min(34rem,calc(100vh-24rem))] overflow-auto rounded-2xl">

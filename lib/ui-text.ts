@@ -178,6 +178,18 @@ const TEXT = {
       saveFailed: "Failed to save glossary term",
       deleteFailed: "Failed to delete glossary term",
       toggleFailed: "Failed to update glossary status",
+      downloadTemplate: "Download Template",
+      importCsv: "Import CSV",
+      importingCsv: "Importing...",
+      importReadFailed: "Failed to read CSV file",
+      importFailed: "Failed to import glossary CSV",
+      importSummary: "Imported {inserted} terms, skipped {skipped} rows.",
+      importSummaryNoSkipped: "Imported {inserted} terms.",
+      importErrorsTitle: "{count} rows need attention.",
+      importRowLabel: "Row {row}",
+      importFormatStage: "Format",
+      importValidationStage: "Validation",
+      importDbStage: "Database",
       deleteConfirm: 'Delete glossary term "{name}"?',
       editAction: "Edit term",
       disableAction: "Disable term",
@@ -444,6 +456,46 @@ Object.assign(
   (mutableText["zh-CN"] as Record<string, unknown>).paragraph as Record<string, string>,
   {
     retranslate: "\u91cd\u65b0\u7ffb\u8bd1",
+  }
+);
+
+Object.assign(
+  (mutableText["zh-CN"] as Record<string, unknown>).provider as Record<string, string>,
+  {
+    saved: "保存配置成功",
+  }
+);
+
+Object.assign((TEXT as unknown as { en: { provider: Record<string, string> } }).en.provider, {
+  saved: "Config saved.",
+});
+
+Object.assign(
+  (mutableText["zh-CN"] as Record<string, unknown>).provider as Record<string, string>,
+  {
+    deleted: "鍒犻櫎渚涘簲鍟嗘垚鍔?",
+  }
+);
+
+Object.assign((TEXT as unknown as { en: { provider: Record<string, string> } }).en.provider, {
+  deleted: "Provider deleted.",
+});
+
+Object.assign(
+  (mutableText["zh-CN"] as Record<string, unknown>).glossary as Record<string, string>,
+  {
+    downloadTemplate: "\u4e0b\u8f7d\u6a21\u677f",
+    importCsv: "\u6279\u91cf\u5bfc\u5165",
+    importingCsv: "\u5bfc\u5165\u4e2d...",
+    importReadFailed: "\u8bfb\u53d6 CSV \u6587\u4ef6\u5931\u8d25",
+    importFailed: "\u5bfc\u5165\u672f\u8bed CSV \u5931\u8d25",
+    importSummary: "\u6210\u529f\u5bfc\u5165 {inserted} \u6761\uff0c\u8df3\u8fc7 {skipped} \u884c\u3002",
+    importSummaryNoSkipped: "\u6210\u529f\u5bfc\u5165 {inserted} \u6761\u3002",
+    importErrorsTitle: "\u6709 {count} \u884c\u9700\u8981\u5904\u7406\u3002",
+    importRowLabel: "\u7b2c {row} \u884c",
+    importFormatStage: "\u683c\u5f0f",
+    importValidationStage: "\u6821\u9a8c",
+    importDbStage: "\u5199\u5165",
   }
 );
 

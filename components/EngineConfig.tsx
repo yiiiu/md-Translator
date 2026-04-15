@@ -19,8 +19,8 @@ interface Props {
   embedded?: boolean;
   uiLanguage?: UiLanguage;
   onClose?: () => void;
-  onSaved?: () => void;
-  onDeleteProvider?: (engineId: string) => void;
+  onSaved?: (message: string) => void;
+  onDeleteProvider?: (engineId: string, message: string) => void;
 }
 
 const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
@@ -38,7 +38,12 @@ export default function EngineConfig({
   onSaved,
   onDeleteProvider,
 }: Props) {
-  const providerText = getUiText(uiLanguage).provider;
+  const providerText = getUiText(uiLanguage).provider as ReturnType<
+    typeof getUiText
+  >["provider"] & {
+    saved: string;
+    deleted: string;
+  };
   const [providerName, setProviderName] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
@@ -208,7 +213,8 @@ export default function EngineConfig({
       }
 
       setApiKeyConfigured(true);
-      onSaved?.();
+      setStatus("success", providerText.saved);
+      onSaved?.(providerText.saved);
     } catch (error) {
       setStatus(
         "error",
@@ -232,7 +238,8 @@ export default function EngineConfig({
       }
 
       setShowDeleteConfirm(false);
-      onDeleteProvider?.(engineId);
+      setStatus("success", providerText.deleted);
+      onDeleteProvider?.(engineId, providerText.deleted);
     } catch (error) {
       setStatus(
         "error",

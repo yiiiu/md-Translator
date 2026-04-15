@@ -131,6 +131,20 @@ export interface GlossaryMutationResponse {
   error?: string;
 }
 
+export interface GlossaryImportErrorResponse {
+  rowNumber: number;
+  stage: "parse" | "validation" | "db";
+  message: string;
+}
+
+export interface GlossaryImportResponse {
+  ok?: boolean;
+  inserted: number;
+  skipped: number;
+  errors: GlossaryImportErrorResponse[];
+  error?: string;
+}
+
 export interface GlossaryTermRequest {
   source_term: string;
   target_term: string;
@@ -469,6 +483,18 @@ export async function deleteGlossaryTerm(
   });
 
   return (await response.json()) as { ok?: boolean; error?: string };
+}
+
+export async function importGlossaryCsv(
+  csv: string
+): Promise<GlossaryImportResponse> {
+  const response = await fetch("/api/glossary/import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ csv }),
+  });
+
+  return (await response.json()) as GlossaryImportResponse;
 }
 
 export async function fetchAppSettings(): Promise<AppSettingsResponse> {
