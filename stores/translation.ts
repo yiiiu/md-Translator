@@ -98,8 +98,13 @@ export const useTranslationStore = create<TranslationStore>((set) => ({
       };
     }),
   reset: () =>
-    set(() => ({
-      ...initialState,
-      targetLang: useAppSettingsStore.getState().defaultTargetLang,
-    })),
+    set(() => {
+      const appSettingsState = useAppSettingsStore.getState();
+
+      return {
+        ...initialState,
+        engine: appSettingsState.defaultEngine,
+        targetLang: appSettingsState.defaultTargetLang,
+      };
+    }),
 }));

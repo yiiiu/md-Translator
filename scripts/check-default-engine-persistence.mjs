@@ -26,9 +26,20 @@ for (const expected of ["defaultEngine", "settings.default_engine"]) {
 }
 
 const homeWorkspace = readFileSync("components/HomeWorkspace.tsx", "utf8");
-for (const expected of ["previousDefaultEngine", "setEngine(initialSettings.default_engine)"]) {
+for (const expected of [
+  "appSettingsHydrated",
+  "applyAppSettings(initialSettings)",
+  "setEngine(initialSettings.default_engine)",
+]) {
   if (!homeWorkspace.includes(expected)) {
     throw new Error(`components/HomeWorkspace.tsx must include ${expected}`);
+  }
+}
+
+const translationStore = readFileSync("stores/translation.ts", "utf8");
+for (const expected of ["appSettingsState.defaultEngine", "appSettingsState.defaultTargetLang"]) {
+  if (!translationStore.includes(expected)) {
+    throw new Error(`stores/translation.ts must include ${expected}`);
   }
 }
 

@@ -18,25 +18,25 @@ export default function HomeWorkspace({
   const initializedRef = useRef(false);
 
   if (!initializedRef.current) {
-    const previousDefaultEngine = useAppSettingsStore.getState().defaultEngine;
-    const previousDefaultTargetLang =
-      useAppSettingsStore.getState().defaultTargetLang;
+    const appSettingsState = useAppSettingsStore.getState();
     const translationState = useTranslationStore.getState();
 
-    useAppSettingsStore.getState().applyAppSettings(initialSettings);
+    if (!appSettingsState.appSettingsHydrated) {
+      useAppSettingsStore.getState().applyAppSettings(initialSettings);
 
-    if (
-      !translationState.rawInput &&
-      translationState.engine === previousDefaultEngine
-    ) {
-      translationState.setEngine(initialSettings.default_engine);
-    }
+      if (
+        !translationState.rawInput &&
+        translationState.engine === appSettingsState.defaultEngine
+      ) {
+        translationState.setEngine(initialSettings.default_engine);
+      }
 
-    if (
-      !translationState.rawInput &&
-      translationState.targetLang === previousDefaultTargetLang
-    ) {
-      translationState.setTargetLang(initialSettings.default_target_lang);
+      if (
+        !translationState.rawInput &&
+        translationState.targetLang === appSettingsState.defaultTargetLang
+      ) {
+        translationState.setTargetLang(initialSettings.default_target_lang);
+      }
     }
 
     initializedRef.current = true;
