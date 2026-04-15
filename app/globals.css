@@ -290,6 +290,23 @@ body {
   padding: 1rem;
 }
 
+.markdown-rendered .mermaid-block.is-interactive {
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+
+.markdown-rendered .mermaid-block.is-interactive.is-dragging {
+  cursor: grabbing;
+}
+
+.markdown-rendered .mermaid-block svg {
+  display: block;
+  max-width: none;
+  margin: 0 auto;
+  user-select: none;
+}
+
 .markdown-rendered .katex {
   color: inherit;
 }

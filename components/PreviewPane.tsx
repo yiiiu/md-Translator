@@ -3,9 +3,13 @@
 import { Code2 as CodeIcon, Eye as EyeIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { RefObject, UIEvent, UIEventHandler } from "react";
+import { renderMarkdown } from "@/lib/markdown-renderer";
+import { resolveThemeMode } from "@/lib/theme";
 import { getUiText } from "@/lib/ui-text";
 import { useAppSettingsStore } from "@/stores/app-settings";
 import { type Paragraph, useTranslationStore } from "@/stores/translation";
+import { looksLikeRawMermaid } from "@/utils/mermaid";
+import { useMermaidRenderer } from "./MermaidRenderer";
 import ParagraphBlock from "./ParagraphBlock";
 
 interface Props {
@@ -20,6 +24,45 @@ interface Props {
 
 function formatLineNumber(index: number) {
   return String(index + 1).padStart(2, "0");
+}
+
+function CombinedMarkdownPreview({ content }: { content: string }) {
+  const themeMode = useAppSettingsStore((state) => state.themeMode);
+  const [renderedContent, setRenderedContent] = useState("");
+  const articleRef = useRef<HTMLElement>(null);
+  const prefersDark =
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches
+      : false;
+  const resolvedTheme = resolveThemeMode(themeMode, prefersDark);
+
+  useMermaidRenderer(articleRef, renderedContent, resolvedTheme);
+
+  useEffect(() => {
+    let active = true;
+
+    void renderMarkdown(content, resolvedTheme).then((html) => {
+      if (active) {
+        setRenderedContent(html);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [content, resolvedTheme]);
+
+  return (
+    <article
+      ref={articleRef}
+      className="mx-3 my-1.5 rounded-xl px-4 py-3 text-[var(--on-surface)]"
+    >
+      <div
+        className="markdown-rendered break-words font-mono text-sm"
+        dangerouslySetInnerHTML={{ __html: renderedContent }}
+      />
+    </article>
+  );
 }
 
 export default function PreviewPane({
@@ -41,6 +84,7 @@ export default function PreviewPane({
   const outputMarkdown = paragraphs
     .map((paragraph) => paragraph.translated || paragraph.original)
     .join("\n\n");
+  const renderCombinedMermaid = looksLikeRawMermaid(outputMarkdown);
   const [codeDraft, setCodeDraft] = useState(outputMarkdown);
   const codeLineCount = Math.max(1, codeDraft.split("\n").length);
   const nextEmptyState = emptyState || text.empty;
@@ -187,6 +231,14 @@ export default function PreviewPane({
         ) : paragraphs.length === 0 ? (
           <div className="grid min-h-full flex-1 place-items-center px-8 py-16 text-center text-sm text-[var(--on-surface-variant)]">
             {nextEmptyState}
+          </div>
+        ) : renderCombinedMermaid ? (
+          <div className="min-w-0 flex-1 py-3">
+            <CombinedMarkdownPreview
+              content={`\`\`\`mermaid
+${outputMarkdown}
+\`\`\``}
+            />
           </div>
         ) : (
           <div className="min-w-0 flex-1 py-3">

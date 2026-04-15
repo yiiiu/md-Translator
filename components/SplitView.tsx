@@ -4,25 +4,10 @@ import { useCallback, useEffect, useRef, type DragEvent, type UIEvent } from "re
 import { startTranslation } from "@/services/api";
 import { useAppSettingsStore } from "@/stores/app-settings";
 import { useTranslationStore } from "@/stores/translation";
-import { parseMarkdown } from "@/utils/markdown-parser";
+import { mapMarkdownToParagraphs, readMarkdownFile } from "@/utils/markdown-import";
 import { useScrollSync } from "@/utils/scroll-sync";
 import PreviewPane from "./PreviewPane";
 import ResizableSplitPane from "./ResizableSplitPane";
-
-function mapToParagraphs(markdown: string) {
-  return parseMarkdown(markdown).map((paragraph) => ({
-    id: paragraph.id,
-    type: paragraph.type,
-    original: paragraph.content,
-    translated: "",
-    status: "idle" as const,
-  }));
-}
-
-function isMarkdownFile(file: File) {
-  const name = file.name.toLowerCase();
-  return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".txt");
-}
 
 function formatLineNumber(index: number) {
   return String(index + 1).padStart(2, "0");
@@ -123,7 +108,7 @@ export default function SplitView() {
         return;
       }
 
-      const nextParagraphs = mapToParagraphs(markdown);
+      const nextParagraphs = mapMarkdownToParagraphs(markdown);
       setParagraphs(nextParagraphs);
       scheduleAutoTranslate(markdown);
     },
@@ -213,18 +198,6 @@ export default function SplitView() {
     };
   }, [mode, paragraphs]);
 
-  const readMarkdownFile = (file: File) => {
-    if (!isMarkdownFile(file)) return;
-
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      const markdown =
-        typeof loadEvent.target?.result === "string" ? loadEvent.target.result : "";
-      syncMarkdown(markdown);
-    };
-    reader.readAsText(file);
-  };
-
   const handleTextareaScroll = (event: UIEvent<HTMLTextAreaElement>) => {
     if (leftLineNumberRef.current) {
       leftLineNumberRef.current.scrollTop = event.currentTarget.scrollTop;
@@ -232,12 +205,19 @@ export default function SplitView() {
     handleLeftScroll();
   };
 
-  const handleDrop = (event: DragEvent<HTMLTextAreaElement>) => {
+  const handleDrop = async (event: DragEvent<HTMLTextAreaElement>) => {
     const file = event.dataTransfer.files?.[0];
     if (!file) return;
 
     event.preventDefault();
-    readMarkdownFile(file);
+    try {
+      const markdown = await readMarkdownFile(file);
+      if (typeof markdown === "string") {
+        syncMarkdown(markdown);
+      }
+    } catch (error) {
+      console.error("Failed to import dropped markdown:", error);
+    }
   };
 
   return (

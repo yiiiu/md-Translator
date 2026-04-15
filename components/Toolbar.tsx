@@ -334,7 +334,7 @@ export default function Toolbar({
             type="button"
             onClick={handleTranslate}
             disabled={!canTranslate}
-            className="rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-container)] px-7 py-2.5 text-sm font-bold text-[var(--surface-container-lowest)] shadow-[0_16px_32px_rgba(0,82,255,0.22)] transition hover:shadow-[0_20px_42px_rgba(0,82,255,0.32)] disabled:cursor-not-allowed disabled:opacity-55"
+            className="rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--primary-container)] px-7 py-2.5 text-sm font-bold text-[var(--surface-container-lowest)] transition disabled:cursor-not-allowed disabled:opacity-55"
           >
             {text.toolbar.translate}
           </button>

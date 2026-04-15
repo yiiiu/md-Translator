@@ -1,38 +1,36 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getUiText } from "@/lib/ui-text";
 import { useAppSettingsStore } from "@/stores/app-settings";
 import { useTranslationStore } from "@/stores/translation";
-
-function isMarkdownFile(file: File) {
-  const name = file.name.toLowerCase();
-  return name.endsWith(".md") || name.endsWith(".markdown") || name.endsWith(".txt");
-}
+import { mapMarkdownToParagraphs, readMarkdownFile } from "@/utils/markdown-import";
 
 function isEditableTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
   return Boolean(target.closest("input, textarea, [contenteditable='true']"));
 }
 
-function readMarkdownFile(file: File, onRead: (markdown: string) => void) {
-  if (!isMarkdownFile(file)) return;
-
-  const reader = new FileReader();
-  reader.onload = (loadEvent) => {
-    const markdown =
-      typeof loadEvent.target?.result === "string" ? loadEvent.target.result : "";
-    onRead(markdown);
-  };
-  reader.readAsText(file);
-}
-
 export default function InputArea() {
-  const { paragraphs, setRawInput } = useTranslationStore();
+  const { paragraphs, reset, setParagraphs, setRawInput } = useTranslationStore();
   const uiLanguage = useAppSettingsStore((state) => state.uiLanguage);
   const text = getUiText(uiLanguage).input;
   const dragDepthRef = useRef(0);
   const [draggingMarkdown, setDraggingMarkdown] = useState(false);
+
+  const importMarkdown = useCallback(
+    (markdown: string) => {
+      setRawInput(markdown);
+
+      if (!markdown.trim()) {
+        reset();
+        return;
+      }
+
+      setParagraphs(mapMarkdownToParagraphs(markdown));
+    },
+    [reset, setParagraphs, setRawInput]
+  );
 
   useEffect(() => {
     const handlePaste = (event: ClipboardEvent) => {
@@ -42,7 +40,7 @@ export default function InputArea() {
       if (!markdown.trim()) return;
 
       event.preventDefault();
-      setRawInput(markdown);
+      importMarkdown(markdown);
     };
 
     const handleDragEnter = (event: DragEvent) => {
@@ -65,14 +63,22 @@ export default function InputArea() {
       }
     };
 
-    const handleDrop = (event: DragEvent) => {
+    const handleDrop = async (event: DragEvent) => {
       const file = event.dataTransfer?.files?.[0];
       if (!file) return;
 
       event.preventDefault();
       dragDepthRef.current = 0;
       setDraggingMarkdown(false);
-      readMarkdownFile(file, setRawInput);
+
+      try {
+        const markdown = await readMarkdownFile(file);
+        if (typeof markdown === "string") {
+          importMarkdown(markdown);
+        }
+      } catch (error) {
+        console.error("Failed to import dropped markdown:", error);
+      }
     };
 
     window.addEventListener("paste", handlePaste);
@@ -88,7 +94,7 @@ export default function InputArea() {
       window.removeEventListener("dragleave", handleDragLeave);
       window.removeEventListener("drop", handleDrop);
     };
-  }, [setRawInput]);
+  }, [importMarkdown]);
 
   return (
     <>

@@ -39,7 +39,7 @@ export default function ParagraphBlock({ paragraph }: Props) {
   const canRetranslate =
     paragraph.status === "done" || paragraph.status === "edited";
 
-  useMermaidRenderer(articleRef);
+  useMermaidRenderer(articleRef, renderedContent, resolvedTheme);
 
   useEffect(() => {
     let active = true;
