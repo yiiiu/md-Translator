@@ -1,3 +1,8 @@
+---
+description: "Core project context and coding rules. Always apply to every AI chat and cmd-k session in this repository."
+alwaysApply: true
+---
+
 # Project Context Rule
 
 ## Role

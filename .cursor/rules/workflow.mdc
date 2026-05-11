@@ -1,3 +1,8 @@
+---
+description: "Use this rule when creating or updating OpenSpec changes, managing AI handoff files, planning tasks, updating task status, or continuing development across AI conversations."
+alwaysApply: false
+---
+
 # AI Development Workflow
 
 ## Before Coding
@@ -47,3 +52,29 @@ When working on a new feature:
 4. Add affected module spec files if needed.
 5. Implement according to the change.
 6. When completed, merge final behavior into `openspec/specs/`.
+
+## Change Creation Rule
+
+Do not create an OpenSpec change for every small edit.
+
+Create a new folder under `openspec/changes/` only when the task meets one or more of these conditions:
+
+1. The task changes business behavior.
+2. The task affects multiple modules.
+3. The task requires frontend and backend coordination.
+4. The task may take more than one conversation to complete.
+5. The task needs design decisions or trade-offs.
+6. The task should be reviewed or remembered later.
+
+For small bug fixes, UI tweaks, copy changes, or isolated file edits, do not create an OpenSpec change unless explicitly requested.
+
+When a change is needed:
+
+1. Create a kebab-case folder under `openspec/changes/`.
+2. Use templates from `openspec/templates/change/`.
+3. Create or copy:
+   - `proposal.md`
+   - `tasks.md`
+   - `spec.md`
+4. Fill TODO placeholders according to the current task.
+5. Do not start code implementation until the change proposal and task list are created.
