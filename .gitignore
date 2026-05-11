@@ -46,3 +46,5 @@ docs/*
 # OpenSpec, AGENTS.md, and .cursor/rules are intentionally commit-eligible.
 
 data/*
+
+openspec-context-template/*
