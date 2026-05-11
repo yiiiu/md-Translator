@@ -55,12 +55,12 @@ export default function ParagraphBlock({ paragraph }: Props) {
     };
   }, [content, resolvedTheme]);
 
-  async function handleRetry() {
+  async function handleRetry(operation: "retry" | "retranslate") {
     if (retrying) return;
 
     setRetrying(true);
     try {
-      await retryParagraph(paragraph, engine, targetLang);
+      await retryParagraph(paragraph, engine, targetLang, operation);
     } finally {
       setRetrying(false);
     }
@@ -102,7 +102,7 @@ export default function ParagraphBlock({ paragraph }: Props) {
       {canRetranslate ? (
         <button
           type="button"
-          onClick={handleRetry}
+          onClick={() => handleRetry("retranslate")}
           disabled={retrying}
           aria-label={paragraphText.retranslate}
           className="absolute top-3 right-12 rounded-full bg-[var(--surface-container-low)] px-2 py-0.5 text-[9px] font-bold tracking-[0.14em] text-[var(--on-surface-variant)] opacity-0 transition group-hover:opacity-100 hover:bg-[var(--secondary-container)] hover:text-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-60"
@@ -118,7 +118,7 @@ export default function ParagraphBlock({ paragraph }: Props) {
           ) : null}
           <button
             type="button"
-            onClick={handleRetry}
+            onClick={() => handleRetry("retry")}
             disabled={retrying}
             aria-label={paragraphText.retry}
             className="rounded-full bg-[var(--surface-container-lowest)] px-3 py-1 font-bold text-[var(--error)] shadow-sm transition hover:bg-[var(--error-container)] disabled:cursor-not-allowed disabled:opacity-60"

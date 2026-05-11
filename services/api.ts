@@ -24,9 +24,12 @@ interface TranslateEvent {
 
 interface ParagraphRetryResponse {
   paragraph_id?: string;
+  task_id?: string;
   translated?: string;
   error?: string;
 }
+
+type ParagraphRetryOperation = "retry" | "retranslate";
 
 interface ApiErrorResponse {
   error?: string;
@@ -257,6 +260,7 @@ export async function startTranslation(
                   : "translating",
             translated: event.translated ?? "",
             errorMessage: event.error,
+            taskId: event.task_id,
           });
         } catch (error) {
           if (error instanceof Error) {
@@ -281,9 +285,11 @@ export async function startTranslation(
 export async function retryParagraph(
   paragraph: Paragraph,
   engine: string,
-  targetLang: string
+  targetLang: string,
+  operation: ParagraphRetryOperation = "retry"
 ): Promise<void> {
   const store = useTranslationStore.getState();
+  const taskId = paragraph.taskId ?? store.taskId;
   const sortOrder = store.paragraphs.findIndex((item) => item.id === paragraph.id);
 
   store.updateParagraph(paragraph.id, {
@@ -298,7 +304,8 @@ export async function retryParagraph(
       body: JSON.stringify({
         engine,
         target_lang: targetLang,
-        task_id: store.taskId,
+        task_id: taskId,
+        operation,
         paragraph_id: paragraph.id,
         content: paragraph.original,
         type: paragraph.type,
@@ -316,6 +323,7 @@ export async function retryParagraph(
       status: "done",
       translated: result.translated,
       errorMessage: undefined,
+      taskId: result.task_id ?? taskId ?? undefined,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";

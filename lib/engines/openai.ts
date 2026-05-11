@@ -1,5 +1,10 @@
 import { getEngineConfig } from "../db";
-import { TranslateParagraph, TranslationEngine, TranslationResult } from "./types";
+import {
+  RateLimitError,
+  TranslateParagraph,
+  TranslationEngine,
+  TranslationResult,
+} from "./types";
 
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
 const DEFAULT_MODEL = "gpt-4o";
@@ -97,7 +102,7 @@ export class OpenAIEngine implements TranslationEngine {
     });
 
     if (response.status === 429) {
-      throw new Error("RATE_LIMITED");
+      throw new RateLimitError(parseRetryAfterMs(response.headers.get("Retry-After")));
     }
 
     if (!response.ok) {
@@ -164,6 +169,20 @@ export class OpenAIEngine implements TranslationEngine {
 
 function normalizeBaseUrl(baseUrl: string): string {
   return (baseUrl || DEFAULT_BASE_URL).replace(/\/+$/, "");
+}
+
+function parseRetryAfterMs(value: string | null): number | undefined {
+  if (!value) return undefined;
+
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return seconds * 1000;
+  }
+
+  const retryAt = Date.parse(value);
+  if (Number.isNaN(retryAt)) return undefined;
+
+  return Math.max(0, retryAt - Date.now());
 }
 
 async function readStableError(response: Response): Promise<string> {

@@ -1,5 +1,5 @@
 import type { Paragraph } from "@/stores/translation";
-import { parseMarkdown } from "@/utils/markdown-parser";
+import { parseMarkdown } from "./markdown-parser.ts";
 
 export function mapMarkdownToParagraphs(markdown: string): Paragraph[] {
   return parseMarkdown(markdown).map((paragraph) => ({
@@ -40,10 +40,16 @@ export async function readMarkdownFile(file: File): Promise<string | null> {
     reader.readAsText(file);
   });
 
-  const name = file.name.toLowerCase();
+  return normalizeMarkdownImport(raw, file.name);
+}
+
+export function normalizeMarkdownImport(raw: string, fileName: string): string {
+  const normalized = raw.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+  const name = fileName.toLowerCase();
+
   if (name.endsWith(".mmd") || name.endsWith(".mermaid")) {
-    return `\`\`\`mermaid\n${raw.trim()}\n\`\`\``;
+    return `\`\`\`mermaid\n${normalized.trim()}\n\`\`\``;
   }
 
-  return raw;
+  return normalized;
 }

@@ -1,23 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
-import { translateStream } from "@/lib/translate";
+import { translateStream, type TranslateRequest } from "@/lib/translate";
+
+const supportedTypes = new Set([
+  "heading",
+  "paragraph",
+  "code",
+  "table",
+  "list",
+  "blockquote",
+  "mermaid",
+]);
+
+type TranslateRequestBody = {
+  engine?: unknown;
+  target_lang?: unknown;
+  mode?: unknown;
+  paragraphs?: unknown;
+};
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  let body: TranslateRequestBody;
 
-  if (!body.paragraphs || !Array.isArray(body.paragraphs) || body.paragraphs.length === 0) {
-    return NextResponse.json({ error: "paragraphs is required and must be non-empty" }, { status: 400 });
+  try {
+    const payload = await request.json();
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+    body = payload as TranslateRequestBody;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (!body.engine) {
-    return NextResponse.json({ error: "engine is required" }, { status: 400 });
+  const validationError = getValidationError(body);
+  if (validationError) {
+    return NextResponse.json({ error: validationError }, { status: 400 });
   }
 
-  // Start translation and return SSE stream directly
+  const translateRequest = body as TranslateRequest;
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        for await (const event of translateStream(body, request.signal)) {
+        for await (const event of translateStream(translateRequest, request.signal)) {
           if (request.signal.aborted) {
             break;
           }
@@ -41,4 +66,44 @@ export async function POST(request: NextRequest) {
       Connection: "keep-alive",
     },
   });
+}
+
+function getValidationError(body: TranslateRequestBody): string | null {
+  if (typeof body.engine !== "string" || body.engine.length === 0) {
+    return "engine is required";
+  }
+
+  if (typeof body.target_lang !== "string" || body.target_lang.length === 0) {
+    return "target_lang is required";
+  }
+
+  if (body.mode !== "full" && body.mode !== "lazy") {
+    return "mode is invalid";
+  }
+
+  if (!Array.isArray(body.paragraphs) || body.paragraphs.length === 0) {
+    return "paragraphs is required and must be non-empty";
+  }
+
+  for (const [index, paragraph] of body.paragraphs.entries()) {
+    if (!paragraph || typeof paragraph !== "object" || Array.isArray(paragraph)) {
+      return `paragraphs[${index}] is invalid`;
+    }
+
+    const item = paragraph as Record<string, unknown>;
+    if (typeof item.id !== "string" || item.id.length === 0) {
+      return `paragraphs[${index}].id is required`;
+    }
+    if (typeof item.content !== "string") {
+      return `paragraphs[${index}].content is required`;
+    }
+    if (typeof item.type !== "string" || !supportedTypes.has(item.type)) {
+      return `paragraphs[${index}].type is invalid`;
+    }
+    if (typeof item.index !== "number" || !Number.isInteger(item.index)) {
+      return `paragraphs[${index}].index is required`;
+    }
+  }
+
+  return null;
 }

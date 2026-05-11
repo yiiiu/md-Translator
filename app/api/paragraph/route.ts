@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCached, setCache } from "@/lib/cache";
 import { createEngine } from "@/lib/translate";
 import { type TranslateParagraph } from "@/lib/engines/types";
 import { syncTaskParagraphResult } from "@/lib/db";
@@ -7,6 +8,7 @@ type ParagraphRetryBody = {
   engine?: unknown;
   target_lang?: unknown;
   task_id?: unknown;
+  operation?: unknown;
   paragraph_id?: unknown;
   content?: unknown;
   type?: unknown;
@@ -44,6 +46,7 @@ export async function POST(request: NextRequest) {
   const engineId = body.engine as string;
   const targetLang = body.target_lang as string;
   const taskId = typeof body.task_id === "string" && body.task_id ? body.task_id : null;
+  const operation = body.operation === "retranslate" ? "retranslate" : "retry";
   const paragraphId = body.paragraph_id as string;
   const content = body.content as string;
   const type = body.type as string;
@@ -64,7 +67,31 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ paragraph_id: paragraphId, translated: content });
+    return NextResponse.json({
+      paragraph_id: paragraphId,
+      task_id: taskId ?? undefined,
+      translated: content,
+    });
+  }
+
+  const cached = operation === "retry" ? getCached(content, engineId, targetLang) : undefined;
+  if (cached) {
+    if (taskId) {
+      syncTaskParagraphResult({
+        taskId,
+        paragraphId,
+        type,
+        original: content,
+        translated: cached,
+        sortOrder,
+      });
+    }
+
+    return NextResponse.json({
+      paragraph_id: paragraphId,
+      task_id: taskId ?? undefined,
+      translated: cached,
+    });
   }
 
   const paragraph: TranslateParagraph = {
@@ -76,7 +103,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const engine = createEngine(engineId);
-    const results = await engine.translateBatch([paragraph], targetLang);
+    const results = await engine.translateBatch([paragraph], targetLang, request.signal);
     const result = results.find((item) => item.paragraphId === paragraphId);
 
     if (!result) {
@@ -85,6 +112,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    setCache(content, engineId, targetLang, result.translated);
 
     if (taskId) {
       syncTaskParagraphResult({
@@ -99,6 +128,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       paragraph_id: paragraphId,
+      task_id: taskId ?? undefined,
       translated: result.translated,
     });
   } catch (error: unknown) {

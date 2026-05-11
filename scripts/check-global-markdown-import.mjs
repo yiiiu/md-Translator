@@ -17,7 +17,8 @@ if (!inputArea.includes("isEditableTarget")) {
 if (!inputArea.includes("readMarkdownFile")) {
   throw new Error("Drag/drop must use the shared file reader path");
 }
-if (!inputArea.includes("Drop .md anywhere")) {
+const uiText = readFileSync("lib/ui-text.ts", "utf8");
+if (!inputArea.includes("text.hint") || !uiText.includes("Drop .md anywhere")) {
   throw new Error("InputArea must show a compact drop/paste hint");
 }
 if (!inputArea.includes("setRawInput")) {
@@ -25,7 +26,7 @@ if (!inputArea.includes("setRawInput")) {
 }
 
 const toolbar = readFileSync("components/Toolbar.tsx", "utf8");
-if (!toolbar.includes('aria-label="Upload .md"') || !toolbar.includes("UploadIcon")) {
+if (!toolbar.includes("aria-label={text.toolbar.upload}") || !toolbar.includes("UploadIcon")) {
   throw new Error("Upload button must remain available in Toolbar");
 }
 

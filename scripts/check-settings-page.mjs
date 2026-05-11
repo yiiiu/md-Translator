@@ -1,14 +1,15 @@
 import { existsSync, readFileSync } from "node:fs";
 
 const db = readFileSync("lib/db.ts", "utf8");
-for (const expected of [
-  "CREATE TABLE IF NOT EXISTS app_settings",
-  "getAppSettings",
-  "upsertAppSettings",
-]) {
+for (const expected of ["getAppSettings", "upsertAppSettings"]) {
   if (!db.includes(expected)) {
-    throw new Error(`lib/db.ts must include ${expected}`);
+    throw new Error(`lib/db.ts must re-export ${expected}`);
   }
+}
+
+const schema = readFileSync("lib/db/schema.ts", "utf8");
+if (!schema.includes("CREATE TABLE IF NOT EXISTS app_settings")) {
+  throw new Error("lib/db/schema.ts must create app_settings");
 }
 
 const api = readFileSync("services/api.ts", "utf8");

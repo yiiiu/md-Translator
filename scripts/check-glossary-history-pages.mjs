@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 
 const db = readFileSync("lib/db.ts", "utf8");
 for (const expected of [
-  "CREATE TABLE IF NOT EXISTS glossary_terms",
   "listGlossaryTerms",
   "createGlossaryTerm",
   "updateGlossaryTerm",
@@ -10,8 +9,13 @@ for (const expected of [
   "listTasks",
 ]) {
   if (!db.includes(expected)) {
-    throw new Error(`lib/db.ts must include ${expected}`);
+    throw new Error(`lib/db.ts must re-export ${expected}`);
   }
+}
+
+const schema = readFileSync("lib/db/schema.ts", "utf8");
+if (!schema.includes("CREATE TABLE IF NOT EXISTS glossary_terms")) {
+  throw new Error("lib/db/schema.ts must create glossary_terms");
 }
 
 const appHeaderPath = "components/AppHeader.tsx";

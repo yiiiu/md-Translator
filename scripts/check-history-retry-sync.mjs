@@ -26,7 +26,8 @@ const api = readFileSync(apiPath, "utf8");
 for (const expected of [
   "if (event.task_id) {",
   "store.setTaskId(event.task_id);",
-  "task_id: store.taskId,",
+  "task_id: taskId,",
+  "taskId: result.task_id ?? taskId ?? undefined,",
 ]) {
   if (!api.includes(expected)) {
     throw new Error(`services/api.ts must include ${expected}`);
@@ -45,15 +46,15 @@ for (const expected of [
   }
 }
 
-const dbPath = "lib/db.ts";
-const db = readFileSync(dbPath, "utf8");
+const dbTaskPath = "lib/db/tasks.ts";
+const dbTasks = readFileSync(dbTaskPath, "utf8");
 for (const expected of [
   "export function syncTaskParagraphResult(",
   "createTaskParagraph({",
   "updateTaskProgress(input.taskId, \"completed\",",
 ]) {
-  if (!db.includes(expected)) {
-    throw new Error(`lib/db.ts must include ${expected}`);
+  if (!dbTasks.includes(expected)) {
+    throw new Error(`lib/db/tasks.ts must include ${expected}`);
   }
 }
 

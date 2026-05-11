@@ -2,7 +2,12 @@ import { readFileSync } from "node:fs";
 
 const db = readFileSync("lib/db.ts", "utf8");
 if (!db.includes("deleteEngineConfig")) {
-  throw new Error("DB layer must support deleting engine config rows");
+  throw new Error("DB facade must re-export deleting engine config rows");
+}
+
+const enginesDb = readFileSync("lib/db/engines.ts", "utf8");
+if (!enginesDb.includes("deleteEngineConfig")) {
+  throw new Error("DB engine module must support deleting engine config rows");
 }
 
 const enginesRoute = readFileSync("app/api/engines/route.ts", "utf8");

@@ -15,6 +15,7 @@ export interface Paragraph {
   translated: string;
   status: "idle" | "translating" | "done" | "error" | "edited" | "queued";
   errorMessage?: string;
+  taskId?: string;
 }
 
 interface TranslationStore {

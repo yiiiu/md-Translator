@@ -9,14 +9,15 @@ const markdown = new MarkdownIt({
   typographer: true,
 });
 
-const fencePattern = /(^|\n)```([^\n`]*)\n([\s\S]*?)\n```(?=\n|$)/g;
+const fencePattern = /(^|\n)( {0,3})(`{3,}|~{3,})([^\n`~]*)\n([\s\S]*?)\n {0,3}\3\s*(?=\n|$)/g;
 
 export async function renderMarkdown(
   source: string,
   themeMode: "light" | "dark" = "light"
 ): Promise<string> {
   const highlightedBlocks: string[] = [];
-  const markdownWithoutFences = await replaceFencedCode(source, highlightedBlocks, themeMode);
+  const normalizedSource = normalizeMarkdown(source);
+  const markdownWithoutFences = await replaceFencedCode(normalizedSource, highlightedBlocks, themeMode);
   const katexProcessed = renderKatex(markdownWithoutFences);
   let rendered = markdown.render(katexProcessed);
 
@@ -39,13 +40,15 @@ async function replaceFencedCode(
   let output = "";
 
   for (const match of source.matchAll(fencePattern)) {
-    const [fullMatch, prefix, rawInfo, code] = match;
+    const [fullMatch, prefix, indent, , rawInfo, code] = match;
     const start = match.index ?? 0;
 
     output += source.slice(cursor, start);
     output += prefix;
+    output += indent;
 
-    if (parseLanguage(rawInfo) === "mermaid") {
+    const language = parseLanguage(rawInfo);
+    if (language === "mermaid") {
       const marker = `@@SHIKI_BLOCK_${highlightedBlocks.length}@@`;
       highlightedBlocks.push(
         `<div class="mermaid-block" data-mermaid="${encodeURIComponent(code)}">${escapeHtml(
@@ -58,9 +61,7 @@ async function replaceFencedCode(
     }
 
     const marker = `@@SHIKI_BLOCK_${highlightedBlocks.length}@@`;
-    highlightedBlocks.push(
-      await highlightCode(code, parseLanguage(rawInfo), themeMode)
-    );
+    highlightedBlocks.push(await highlightCode(code, language, themeMode));
     output += marker;
 
     cursor = start + fullMatch.length;
@@ -70,8 +71,12 @@ async function replaceFencedCode(
   return output;
 }
 
+function normalizeMarkdown(source: string) {
+  return source.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+}
+
 function parseLanguage(info: string) {
-  return info.trim().split(/\s+/)[0] || "text";
+  return info.trim().split(/\s+/)[0]?.toLowerCase() || "text";
 }
 
 async function highlightCode(

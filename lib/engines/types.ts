@@ -10,6 +10,16 @@ export interface TranslationResult {
   translated: string;
 }
 
+export class RateLimitError extends Error {
+  retryAfterMs?: number;
+
+  constructor(retryAfterMs?: number) {
+    super("RATE_LIMITED");
+    this.name = "RateLimitError";
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
 export interface TranslationEngine {
   /** Translate a batch of paragraphs (grouped for context). Returns translated text per group. */
   translateBatch(
