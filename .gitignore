@@ -41,6 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# docs
+# local collaboration docs and AI state snapshots
 docs/*
+# OpenSpec, AGENTS.md, and .cursor/rules are intentionally commit-eligible.
+
 data/*
