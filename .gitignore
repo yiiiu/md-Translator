@@ -45,6 +45,11 @@ next-env.d.ts
 docs/*
 # OpenSpec, AGENTS.md, and .cursor/rules are intentionally commit-eligible.
 
+# keep project-level Cursor rules tracked, but ignore local Cursor workspace state
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
+
 data/*
 
 openspec-context-template/*
