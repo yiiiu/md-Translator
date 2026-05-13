@@ -43,12 +43,10 @@ next-env.d.ts
 
 # local collaboration docs and AI state snapshots
 docs/*
-# OpenSpec, AGENTS.md, and .cursor/rules are intentionally commit-eligible.
+# OpenSpec and AGENTS.md are intentionally commit-eligible.
 
-# keep project-level Cursor rules tracked, but ignore local Cursor workspace state
-.cursor/*
-!.cursor/rules/
-!.cursor/rules/**
+# Cursor workspace state is local-only.
+.cursor/
 
 data/*
 
